@@ -131,6 +131,16 @@
     }
 
     /* ───── filters ───────────────────────────────── */
+    /* Hidden checkbox that drives the mobile dropdown via :checked */
+    .filters-cb {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* Mobile-only toggle label, hidden on desktop */
+    .filters-label { display: none; }
+    .filters-body { display: block; }
+
     .filters h2 {
       font-size: 13px;
       text-transform: uppercase;
@@ -300,20 +310,51 @@
     /* ───── responsive ────────────────────────────── */
     @media (max-width: 900px) {
       .grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-      .layout { grid-template-columns: 1fr; gap: 24px; }
+      .layout { grid-template-columns: 1fr; gap: 16px; }
       .header-row { gap: 12px; padding: 12px 0; }
-      .logo { font-size: 16px; }
+      .logo { font-size: 15px; letter-spacing: 0.1em; }
       .search input, .search button { padding: 8px 10px; font-size: 13px; }
       .icons { gap: 12px; }
       .icon-btn span { display: none; }
+
+      /* filters become collapsible dropdown above products */
       .filters {
-        order: 2;
-        background: #fafafa;
-        padding: 16px;
-        border: 1px solid #eee;
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 0;
       }
-      .filters h2 { margin-bottom: 12px; }
-      .filter-block { margin-bottom: 16px; padding-bottom: 12px; }
+      .filters-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 14px 16px;
+        font-weight: 600;
+        font-size: 14px;
+        user-select: none;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .filters-label::after {
+        content: "▾";
+        font-size: 14px;
+        transition: transform 0.2s;
+        color: #777;
+      }
+      .filters-cb:checked ~ .filters-label::after {
+        transform: rotate(180deg);
+      }
+      .filters-body {
+        display: none;
+        padding: 0 16px 16px;
+        border-top: 1px solid #eee;
+      }
+      .filters-cb:checked ~ .filters-body {
+        display: block;
+      }
+      .filters-body h2 { display: none; }
+      .filter-block { margin-top: 16px; margin-bottom: 0; padding-bottom: 12px; }
+
       .products-head h1 { font-size: 18px; }
       main { padding: 16px 0; }
       .shell { padding: 0 12px; }
@@ -329,7 +370,7 @@
   <header>
     <div class="shell">
       <div class="header-row">
-        <div class="logo">PARFUM</div>
+        <div class="logo">КОМНАТА 26</div>
         <div class="search">
           <input type="text" placeholder="Найти аромат или бренд…">
           <button>Найти</button>
@@ -358,32 +399,36 @@
     <div class="layout">
 
       <aside class="filters">
-        <h2>Фильтры</h2>
+        <input type="checkbox" id="filters-toggle" class="filters-cb">
+        <label for="filters-toggle" class="filters-label">Фильтры</label>
+        <div class="filters-body">
+          <h2>Фильтры</h2>
 
-        <div class="filter-block">
-          <h3>Бренд</h3>
-          <label><input type="checkbox" checked> Tom Ford</label>
-          <label><input type="checkbox"> Maison Francis Kurkdjian</label>
-          <label><input type="checkbox"> Creed</label>
-          <label><input type="checkbox" checked> Chanel</label>
-          <label><input type="checkbox"> Dior</label>
-          <label><input type="checkbox"> YSL</label>
-          <label><input type="checkbox"> Guerlain</label>
-        </div>
+          <div class="filter-block">
+            <h3>Бренд</h3>
+            <label><input type="checkbox" checked> Tom Ford</label>
+            <label><input type="checkbox"> Maison Francis Kurkdjian</label>
+            <label><input type="checkbox"> Creed</label>
+            <label><input type="checkbox" checked> Chanel</label>
+            <label><input type="checkbox"> Dior</label>
+            <label><input type="checkbox"> YSL</label>
+            <label><input type="checkbox"> Guerlain</label>
+          </div>
 
-        <div class="filter-block">
-          <h3>Страна</h3>
-          <label><input type="checkbox"> Франция</label>
-          <label><input type="checkbox"> США</label>
-          <label><input type="checkbox"> Италия</label>
-          <label><input type="checkbox"> Великобритания</label>
-        </div>
+          <div class="filter-block">
+            <h3>Страна</h3>
+            <label><input type="checkbox"> Франция</label>
+            <label><input type="checkbox"> США</label>
+            <label><input type="checkbox"> Италия</label>
+            <label><input type="checkbox"> Великобритания</label>
+          </div>
 
-        <div class="filter-block">
-          <h3>Цена, ₽</h3>
-          <div class="price-range">
-            <input type="number" placeholder="от" value="500">
-            <input type="number" placeholder="до" value="15000">
+          <div class="filter-block">
+            <h3>Цена, ₽</h3>
+            <div class="price-range">
+              <input type="number" placeholder="от" value="500">
+              <input type="number" placeholder="до" value="15000">
+            </div>
           </div>
         </div>
       </aside>
