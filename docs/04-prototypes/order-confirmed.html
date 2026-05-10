@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Заказ оформлен — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+      color: #111;
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+
+    .note {
+      background: #fffbe6;
+      border-bottom: 1px solid #e3d896;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #6b5500;
+    }
+    .note b { color: #463600; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* ───── header ────────────────────────────────── */
+    header { border-bottom: 1px solid #111; background: #fff; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; gap: 16px; }
+    .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 18px; }
+    .header-back { color: #777; text-decoration: none; font-size: 13px; }
+    .header-back:hover { color: #111; }
+
+    /* ───── hero block ────────────────────────────── */
+    main { padding: 48px 0 80px; }
+    .confirmed {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .check-icon {
+      width: 72px;
+      height: 72px;
+      border: 2px solid #111;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .check-icon svg { width: 36px; height: 36px; stroke: #111; fill: none; stroke-width: 2.5; }
+    .confirmed h1 {
+      text-align: center;
+      font-size: 32px;
+      font-weight: 600;
+      margin: 0 0 12px;
+    }
+    .order-number {
+      text-align: center;
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .order-number strong { color: #111; }
+    .confirmation-msg {
+      text-align: center;
+      color: #777;
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+
+    /* ───── details cards ─────────────────────────── */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .card {
+      border: 1px solid #eee;
+      padding: 20px;
+      background: #fafafa;
+    }
+    .card h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 12px;
+      color: #777;
+      font-weight: 600;
+    }
+    .card .row { font-size: 14px; line-height: 1.6; }
+    .card .row strong { display: block; margin-bottom: 4px; }
+
+    /* ───── items ─────────────────────────────────── */
+    .items-block {
+      border: 1px solid #eee;
+      padding: 24px;
+      margin-bottom: 36px;
+    }
+    .items-block h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 16px;
+      font-weight: 600;
+    }
+    .item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+    .item:last-of-type { border-bottom: none; }
+    .item .img {
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .item .img svg { width: 60%; height: 60%; opacity: 0.4; }
+    .item .info .b { color: #777; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .item .info .n { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .item .info .v { font-size: 12px; color: #555; }
+    .item .price { font-size: 14px; font-weight: 600; white-space: nowrap; }
+
+    .totals { padding-top: 12px; border-top: 1px solid #ddd; margin-top: 12px; }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 14px;
+    }
+    .totals-row.muted { color: #777; }
+    .totals-row.total {
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 1px solid #eee;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* ───── what's next ───────────────────────────── */
+    .next {
+      background: #fafafa;
+      border: 1px solid #eee;
+      padding: 20px;
+      margin-bottom: 36px;
+    }
+    .next h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
+    .next ol {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* ───── actions ───────────────────────────────── */
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .btn {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      text-decoration: none;
+      border: 1px solid #111;
+      text-align: center;
+    }
+    .btn-primary { background: #111; color: #fff; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary { background: #fff; color: #111; }
+    .btn-secondary:hover { background: #fafafa; }
+
+    /* ───── responsive ────────────────────────────── */
+    @media (max-width: 900px) {
+      .shell { padding: 0 12px; }
+      .header-row { gap: 8px; padding: 12px 0; }
+      .logo { font-size: 15px; letter-spacing: 0.1em; }
+      main { padding: 24px 0 40px; }
+      .confirmed h1 { font-size: 24px; }
+      .check-icon { width: 56px; height: 56px; margin-bottom: 16px; }
+      .check-icon svg { width: 28px; height: 28px; }
+      .cards { grid-template-columns: 1fr; gap: 10px; }
+      .items-block { padding: 16px; }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> страница подтверждения заказа. Номер, контакты, адрес самовывоза, состав и сумма заказа, что делать дальше.
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">КОМНАТА 26</div>
+        <a href="catalog.html" class="header-back">← В каталог</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <div class="confirmed">
+
+      <div class="check-icon">
+        <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>
+      </div>
+
+      <h1>Заказ оформлен</h1>
+      <p class="order-number">Номер заказа <strong>№ 26-001847</strong></p>
+      <p class="confirmation-msg">Мы отправили подтверждение на ksenia@example.com</p>
+
+      <div class="cards">
+        <div class="card">
+          <h2>Контакты</h2>
+          <div class="row">
+            <strong>Ксения</strong>
+            +7 (999) 123-45-67<br>
+            ksenia@example.com
+          </div>
+        </div>
+        <div class="card">
+          <h2>Точка самовывоза</h2>
+          <div class="row">
+            <strong>На Тверской</strong>
+            Москва, ул. Тверская, 22, 1-й этаж<br>
+            Пн–Пт 11:00–21:00, Сб–Вс 12:00–20:00
+          </div>
+        </div>
+      </div>
+
+      <div class="items-block">
+        <h2>Состав заказа</h2>
+
+        <div class="item">
+          <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+          <div class="info">
+            <div class="b">Tom Ford</div>
+            <div class="n">Lost Cherry</div>
+            <div class="v">10 мл · 1 шт.</div>
+          </div>
+          <div class="price">1 790 ₽</div>
+        </div>
+
+        <div class="item">
+          <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+          <div class="info">
+            <div class="b">Chanel</div>
+            <div class="n">№5 Eau de Parfum</div>
+            <div class="v">5 мл · 2 шт.</div>
+          </div>
+          <div class="price">1 580 ₽</div>
+        </div>
+
+        <div class="item">
+          <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+          <div class="info">
+            <div class="b">Maison Francis Kurkdjian</div>
+            <div class="n">Baccarat Rouge 540</div>
+            <div class="v">5 мл · 1 шт.</div>
+          </div>
+          <div class="price">1 210 ₽</div>
+        </div>
+
+        <div class="totals">
+          <div class="totals-row">
+            <span>Товары, 4 шт.</span>
+            <span>4 580 ₽</span>
+          </div>
+          <div class="totals-row muted">
+            <span>Самовывоз</span>
+            <span>бесплатно</span>
+          </div>
+          <div class="totals-row total">
+            <span>К оплате при получении</span>
+            <span>4 580 ₽</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="next">
+        <h2>Что дальше</h2>
+        <ol>
+          <li>Менеджер подтвердит заказ по телефону в течение часа.</li>
+          <li>После подтверждения мы соберём заказ — обычно за 1–2 рабочих дня.</li>
+          <li>Когда заказ будет готов, мы напишем — приходите в выбранную точку самовывоза.</li>
+          <li>Оплата — при получении наличными или картой.</li>
+        </ol>
+      </div>
+
+      <div class="actions">
+        <a href="catalog.html" class="btn btn-secondary">Продолжить покупки</a>
+        <a href="account-orders.html" class="btn btn-primary">Мои заказы</a>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

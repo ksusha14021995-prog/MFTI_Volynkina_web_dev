@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Оформление заказа — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+      color: #111;
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+
+    .note {
+      background: #fffbe6;
+      border-bottom: 1px solid #e3d896;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #6b5500;
+    }
+    .note b { color: #463600; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* ───── header (simplified) ───────────────────── */
+    header { border-bottom: 1px solid #111; background: #fff; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; gap: 16px; }
+    .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 18px; }
+    .header-back { color: #777; text-decoration: none; font-size: 13px; }
+    .header-back:hover { color: #111; }
+
+    /* ───── page header ───────────────────────────── */
+    main { padding: 32px 0 60px; }
+    .page-title {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 32px;
+    }
+
+    /* ───── layout ────────────────────────────────── */
+    .checkout-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* ───── form sections ─────────────────────────── */
+    .section {
+      margin-bottom: 36px;
+    }
+    .section h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 16px;
+      font-weight: 600;
+      color: #111;
+    }
+    .section h2 .step {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      border-radius: 50%;
+      font-weight: 600;
+      margin-right: 10px;
+      font-size: 12px;
+    }
+
+    /* ───── form fields ───────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; }
+    .field.full { grid-column: 1 / -1; }
+    .field label {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 6px;
+    }
+    .field input, .field select {
+      border: 1px solid #ccc;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+    .field input:focus, .field select:focus { border-color: #111; }
+
+    /* ───── pickup options ────────────────────────── */
+    .pickup-list { display: flex; flex-direction: column; gap: 10px; }
+    .pickup-option {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      transition: border 0.1s;
+    }
+    .pickup-option:hover { border-color: #888; }
+    .pickup-option.selected {
+      border-color: #111;
+      background: #fafafa;
+    }
+    .pickup-option input { margin-top: 3px; accent-color: #111; }
+    .pickup-info { flex: 1; }
+    .pickup-name { font-weight: 600; margin-bottom: 4px; }
+    .pickup-addr { color: #555; margin-bottom: 4px; font-size: 13px; }
+    .pickup-hours { color: #777; font-size: 12px; }
+
+    /* ───── payment ───────────────────────────────── */
+    .payment-info {
+      padding: 16px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      font-size: 14px;
+    }
+    .payment-info strong { display: block; margin-bottom: 4px; }
+    .payment-info p { margin: 0; color: #555; font-size: 13px; }
+
+    /* ───── summary card ──────────────────────────── */
+    .summary {
+      border: 1px solid #eee;
+      padding: 24px;
+      position: sticky;
+      top: 24px;
+      background: #fafafa;
+    }
+    .summary h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 16px;
+      font-weight: 600;
+    }
+    .summary-items { margin-bottom: 16px; }
+    .summary-item {
+      display: grid;
+      grid-template-columns: 50px 1fr auto;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+    .summary-item:last-child { border-bottom: none; }
+    .summary-item .img {
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .summary-item .img svg { width: 70%; height: 70%; opacity: 0.4; }
+    .summary-item .info { font-size: 13px; min-width: 0; }
+    .summary-item .info .b { color: #777; font-size: 11px; text-transform: uppercase; }
+    .summary-item .info .n { font-weight: 500; }
+    .summary-item .info .v { color: #555; font-size: 12px; }
+    .summary-item .price { font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 14px;
+    }
+    .summary-row.muted { color: #777; }
+    .summary-row.total {
+      border-top: 1px solid #ddd;
+      margin-top: 12px;
+      padding-top: 14px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .btn-place {
+      display: block;
+      width: 100%;
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 16px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 20px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn-place:hover { opacity: 0.85; }
+    .terms {
+      font-size: 12px;
+      color: #777;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* ───── responsive ────────────────────────────── */
+    @media (max-width: 900px) {
+      .shell { padding: 0 12px; }
+      .header-row { gap: 8px; padding: 12px 0; }
+      .logo { font-size: 15px; letter-spacing: 0.1em; }
+      main { padding: 16px 0 40px; }
+      .page-title { font-size: 22px; margin-bottom: 24px; }
+      .checkout-layout { grid-template-columns: 1fr; gap: 24px; }
+      .summary { position: static; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> оформление заказа. Контактные данные, выбор точки самовывоза, способ оплаты, итоговая сумма, кнопка «Оформить заказ».
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">КОМНАТА 26</div>
+        <a href="cart.html" class="header-back">← Вернуться в корзину</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <h1 class="page-title">Оформление заказа</h1>
+
+    <div class="checkout-layout">
+
+      <section>
+
+        <div class="section">
+          <h2><span class="step">1</span>Ваши данные</h2>
+          <div class="form-grid">
+            <div class="field full">
+              <label>Имя</label>
+              <input type="text" value="Ксения" placeholder="Имя">
+            </div>
+            <div class="field">
+              <label>Телефон</label>
+              <input type="tel" value="+7 (999) 123-45-67" placeholder="+7 ___ ___ __ __">
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" value="ksenia@example.com" placeholder="email@example.com">
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2><span class="step">2</span>Точка самовывоза</h2>
+          <div class="pickup-list">
+
+            <label class="pickup-option selected">
+              <input type="radio" name="pickup" checked>
+              <div class="pickup-info">
+                <div class="pickup-name">Точка на Тверской</div>
+                <div class="pickup-addr">Москва, ул. Тверская, 22, 1-й этаж</div>
+                <div class="pickup-hours">Пн–Пт 11:00–21:00, Сб–Вс 12:00–20:00</div>
+              </div>
+            </label>
+
+            <label class="pickup-option">
+              <input type="radio" name="pickup">
+              <div class="pickup-info">
+                <div class="pickup-name">Точка в Хамовниках</div>
+                <div class="pickup-addr">Москва, Комсомольский пр-т, 14, корп. 2</div>
+                <div class="pickup-hours">Ежедневно 10:00–22:00</div>
+              </div>
+            </label>
+
+            <label class="pickup-option">
+              <input type="radio" name="pickup">
+              <div class="pickup-info">
+                <div class="pickup-name">Точка в БЦ «Око»</div>
+                <div class="pickup-addr">Москва, 1-й Красногвардейский пр-д, 21</div>
+                <div class="pickup-hours">Пн–Пт 09:00–20:00</div>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <div class="section">
+          <h2><span class="step">3</span>Способ оплаты</h2>
+          <div class="payment-info">
+            <strong>Оплата при получении</strong>
+            <p>Вы оплачиваете заказ наличными или картой в точке самовывоза в момент получения.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <aside class="summary">
+        <h2>Ваш заказ</h2>
+
+        <div class="summary-items">
+          <div class="summary-item">
+            <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="info">
+              <div class="b">Tom Ford</div>
+              <div class="n">Lost Cherry</div>
+              <div class="v">10 мл · 1 шт.</div>
+            </div>
+            <div class="price">1 790 ₽</div>
+          </div>
+          <div class="summary-item">
+            <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="info">
+              <div class="b">Chanel</div>
+              <div class="n">№5</div>
+              <div class="v">5 мл · 2 шт.</div>
+            </div>
+            <div class="price">1 580 ₽</div>
+          </div>
+          <div class="summary-item">
+            <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="info">
+              <div class="b">Maison Francis Kurkdjian</div>
+              <div class="n">Baccarat Rouge 540</div>
+              <div class="v">5 мл · 1 шт.</div>
+            </div>
+            <div class="price">1 210 ₽</div>
+          </div>
+        </div>
+
+        <div class="summary-row">
+          <span>Товары, 4 шт.</span>
+          <span>4 580 ₽</span>
+        </div>
+        <div class="summary-row muted">
+          <span>Самовывоз</span>
+          <span>бесплатно</span>
+        </div>
+        <div class="summary-row total">
+          <span>К оплате при получении</span>
+          <span>4 580 ₽</span>
+        </div>
+
+        <a href="order-confirmed.html" class="btn-place">Оформить заказ</a>
+
+        <p class="terms">Нажимая «Оформить заказ», вы принимаете условия оферты и согласие на обработку персональных данных.</p>
+      </aside>
+
+    </div>
+
+  </main>
+
+</body>
+</html>
