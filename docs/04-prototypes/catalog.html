@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Каталог — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+      color: #111;
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* ───── annotation banner ─────────────────────── */
+    .note {
+      background: #fffbe6;
+      border-bottom: 1px solid #e3d896;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #6b5500;
+    }
+    .note b { color: #463600; }
+
+    /* ───── shell ─────────────────────────────────── */
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* ───── header ────────────────────────────────── */
+    header {
+      border-bottom: 1px solid #111;
+      background: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 16px 0;
+    }
+    .logo {
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .search {
+      flex: 1;
+      display: flex;
+      max-width: 600px;
+    }
+    .search input {
+      flex: 1;
+      border: 1px solid #111;
+      border-right: none;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+    .search button {
+      border: 1px solid #111;
+      background: #111;
+      color: #fff;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .icons {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .icon-btn svg { width: 22px; height: 22px; stroke: #111; fill: none; stroke-width: 1.5; }
+    .cart-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: #111;
+      color: #fff;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-left: -2px;
+    }
+
+    /* ───── categories ────────────────────────────── */
+    .cats {
+      display: flex;
+      gap: 0;
+      border-top: 1px solid #ddd;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .cats::-webkit-scrollbar { display: none; }
+    .cats a {
+      padding: 12px 18px;
+      font-size: 14px;
+      color: #111;
+      text-decoration: none;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .cats a.active {
+      border-bottom-color: #111;
+      font-weight: 600;
+    }
+
+    /* ───── main layout ───────────────────────────── */
+    main { padding: 32px 0; }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 40px;
+    }
+
+    /* ───── filters ───────────────────────────────── */
+    .filters h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 16px;
+      color: #111;
+    }
+    .filter-block {
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .filter-block:last-child { border-bottom: none; }
+    .filter-block h3 {
+      font-size: 14px;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
+    .filter-block label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .filter-block input[type="checkbox"] {
+      accent-color: #111;
+    }
+    .price-range {
+      display: flex;
+      gap: 8px;
+    }
+    .price-range input {
+      width: 100%;
+      border: 1px solid #ccc;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+    .price-range input:focus { border-color: #111; }
+
+    /* ───── products grid ─────────────────────────── */
+    .products-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 20px;
+    }
+    .products-head h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: 600;
+    }
+    .products-head .count {
+      color: #777;
+      font-size: 13px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    /* ───── product card ──────────────────────────── */
+    .card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      position: relative;
+    }
+    .card-image {
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .card-image svg { width: 50%; height: 50%; opacity: 0.4; }
+    .card-brand {
+      font-size: 12px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .card-name {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .card-price {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .card-price .old {
+      color: #999;
+      text-decoration: line-through;
+      font-weight: 400;
+      margin-right: 6px;
+    }
+    .card-price .from {
+      color: #777;
+      font-weight: 400;
+      font-size: 12px;
+      margin-right: 4px;
+    }
+
+    /* ───── badges ────────────────────────────────── */
+    .badges {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 1;
+    }
+    .badge {
+      font-size: 10px;
+      padding: 4px 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .badge.hit { background: #111; color: #fff; }
+    .badge.sale { background: #d63838; color: #fff; }
+
+    /* ───── pagination ────────────────────────────── */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 40px;
+    }
+    .pagination a {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      text-decoration: none;
+      color: #111;
+      font-size: 14px;
+      min-width: 36px;
+      text-align: center;
+    }
+    .pagination a.active {
+      border-color: #111;
+      background: #111;
+      color: #fff;
+    }
+
+    /* ───── footer ────────────────────────────────── */
+    footer {
+      border-top: 1px solid #eee;
+      padding: 32px 0;
+      margin-top: 60px;
+      color: #777;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    /* ───── responsive ────────────────────────────── */
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .layout { grid-template-columns: 1fr; gap: 24px; }
+      .header-row { gap: 12px; padding: 12px 0; }
+      .logo { font-size: 16px; }
+      .search input, .search button { padding: 8px 10px; font-size: 13px; }
+      .icons { gap: 12px; }
+      .icon-btn span { display: none; }
+      .filters {
+        order: 2;
+        background: #fafafa;
+        padding: 16px;
+        border: 1px solid #eee;
+      }
+      .filters h2 { margin-bottom: 12px; }
+      .filter-block { margin-bottom: 16px; padding-bottom: 12px; }
+      .products-head h1 { font-size: 18px; }
+      main { padding: 16px 0; }
+      .shell { padding: 0 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> страница каталога. Без финального дизайна — это схема расположения элементов и набор функций. Реальный визуал прорабатываем позже.
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">PARFUM</div>
+        <div class="search">
+          <input type="text" placeholder="Найти аромат или бренд…">
+          <button>Найти</button>
+        </div>
+        <div class="icons">
+          <span class="icon-btn" title="Корзина">
+            <svg viewBox="0 0 24 24"><path d="M3 6h2l2.5 11h11L21 9H7"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
+            <span class="cart-badge">3</span>
+          </span>
+          <span class="icon-btn" title="Личный кабинет">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            <span>Войти</span>
+          </span>
+        </div>
+      </div>
+      <nav class="cats">
+        <a href="#" class="active">Все</a>
+        <a href="#">Женские</a>
+        <a href="#">Мужские</a>
+        <a href="#">Унисекс</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="layout">
+
+      <aside class="filters">
+        <h2>Фильтры</h2>
+
+        <div class="filter-block">
+          <h3>Бренд</h3>
+          <label><input type="checkbox" checked> Tom Ford</label>
+          <label><input type="checkbox"> Maison Francis Kurkdjian</label>
+          <label><input type="checkbox"> Creed</label>
+          <label><input type="checkbox" checked> Chanel</label>
+          <label><input type="checkbox"> Dior</label>
+          <label><input type="checkbox"> YSL</label>
+          <label><input type="checkbox"> Guerlain</label>
+        </div>
+
+        <div class="filter-block">
+          <h3>Страна</h3>
+          <label><input type="checkbox"> Франция</label>
+          <label><input type="checkbox"> США</label>
+          <label><input type="checkbox"> Италия</label>
+          <label><input type="checkbox"> Великобритания</label>
+        </div>
+
+        <div class="filter-block">
+          <h3>Цена, ₽</h3>
+          <div class="price-range">
+            <input type="number" placeholder="от" value="500">
+            <input type="number" placeholder="до" value="15000">
+          </div>
+        </div>
+      </aside>
+
+      <section>
+        <div class="products-head">
+          <h1>Каталог ароматов</h1>
+          <span class="count">Найдено: 124</span>
+        </div>
+
+        <div class="grid">
+
+          <a href="#" class="card">
+            <div class="badges"><span class="badge hit">Хит продаж</span></div>
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Tom Ford</div>
+            <div class="card-name">Lost Cherry</div>
+            <div class="card-price"><span class="from">от</span>1 290 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="badges"><span class="badge hit">Хит продаж</span></div>
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Maison Francis Kurkdjian</div>
+            <div class="card-name">Baccarat Rouge 540</div>
+            <div class="card-price"><span class="from">от</span>1 890 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Creed</div>
+            <div class="card-name">Aventus</div>
+            <div class="card-price"><span class="from">от</span>2 290 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="badges"><span class="badge sale">Скидка −20%</span></div>
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Chanel</div>
+            <div class="card-name">№5 Eau de Parfum</div>
+            <div class="card-price"><span class="from">от</span><span class="old">990 ₽</span>790 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Dior</div>
+            <div class="card-name">Sauvage</div>
+            <div class="card-price"><span class="from">от</span>1 090 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="badges"><span class="badge hit">Хит продаж</span></div>
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">YSL</div>
+            <div class="card-name">Black Opium</div>
+            <div class="card-price"><span class="from">от</span>1 190 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Givenchy</div>
+            <div class="card-name">L'Interdit</div>
+            <div class="card-price"><span class="from">от</span>990 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="badges"><span class="badge sale">Скидка −15%</span></div>
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Prada</div>
+            <div class="card-name">Paradoxe</div>
+            <div class="card-price"><span class="from">от</span><span class="old">1 190 ₽</span>1 010 ₽</div>
+          </a>
+
+          <a href="#" class="card">
+            <div class="card-image">
+              <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg>
+            </div>
+            <div class="card-brand">Guerlain</div>
+            <div class="card-name">Shalimar</div>
+            <div class="card-price"><span class="from">от</span>1 390 ₽</div>
+          </a>
+
+        </div>
+
+        <nav class="pagination">
+          <a href="#">←</a>
+          <a href="#" class="active">1</a>
+          <a href="#">2</a>
+          <a href="#">3</a>
+          <a href="#">…</a>
+          <a href="#">14</a>
+          <a href="#">→</a>
+        </nav>
+
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    Прототип ДЗ-1 / МФТИ × Нетология / 2026
+  </footer>
+
+</body>
+</html>
