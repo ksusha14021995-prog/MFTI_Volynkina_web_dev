@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Карточка товара — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+      color: #111;
+      background: #fff;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+
+    .note {
+      background: #fffbe6;
+      border-bottom: 1px solid #e3d896;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #6b5500;
+    }
+    .note b { color: #463600; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* ───── header ────────────────────────────────── */
+    header {
+      border-bottom: 1px solid #111;
+      background: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 16px 0;
+    }
+    .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 18px; flex-shrink: 0; }
+    .search { flex: 1; display: flex; max-width: 600px; }
+    .search input { flex: 1; border: 1px solid #111; border-right: none; padding: 9px 12px; font-size: 14px; font-family: inherit; outline: none; background: #fff; }
+    .search button { border: 1px solid #111; background: #111; color: #fff; padding: 9px 18px; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .icons { display: flex; gap: 18px; align-items: center; flex-shrink: 0; }
+    .icon-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+    .icon-btn svg { width: 22px; height: 22px; stroke: #111; fill: none; stroke-width: 1.5; }
+    .cart-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; background: #111; color: #fff; border-radius: 10px; font-size: 11px; margin-left: -2px; }
+    .cats { display: flex; gap: 0; border-top: 1px solid #ddd; overflow-x: auto; scrollbar-width: none; }
+    .cats::-webkit-scrollbar { display: none; }
+    .cats a { padding: 12px 18px; font-size: 14px; color: #111; text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
+    .cats a.active { border-bottom-color: #111; font-weight: 600; }
+
+    /* ───── breadcrumbs ───────────────────────────── */
+    .breadcrumbs {
+      padding: 16px 0 0;
+      font-size: 13px;
+      color: #777;
+    }
+    .breadcrumbs a {
+      color: #777;
+      text-decoration: none;
+    }
+    .breadcrumbs a:hover { color: #111; text-decoration: underline; }
+    .breadcrumbs .sep { margin: 0 6px; }
+
+    /* ───── product layout ────────────────────────── */
+    main { padding: 24px 0 60px; }
+    .product {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      margin-top: 12px;
+    }
+    .product-image {
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .product-image svg { width: 50%; height: 50%; opacity: 0.4; }
+    .product-image .badges {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 5px 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .badge.hit { background: #111; color: #fff; }
+    .badge.sale { background: #d63838; color: #fff; }
+
+    /* ───── product info ──────────────────────────── */
+    .brand {
+      font-size: 13px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin: 0 0 24px;
+      line-height: 1.2;
+    }
+
+    /* ───── volume selector ───────────────────────── */
+    .volumes {
+      margin-bottom: 28px;
+    }
+    .volumes-label {
+      display: block;
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 10px;
+    }
+    .volumes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .volume {
+      border: 1px solid #ddd;
+      padding: 14px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.1s;
+      background: #fff;
+    }
+    .volume:hover { border-color: #888; }
+    .volume.selected {
+      border-color: #111;
+      background: #fafafa;
+    }
+    .volume.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #f5f5f5;
+    }
+    .volume .vol { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .volume .price { font-size: 14px; color: #111; }
+    .volume .stock-warn { font-size: 11px; color: #d63838; margin-top: 4px; }
+    .volume .out { font-size: 11px; color: #999; margin-top: 4px; }
+
+    /* ───── price & cart ──────────────────────────── */
+    .price-block {
+      margin-bottom: 24px;
+      padding: 16px 0;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+    }
+    .price-current {
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .price-old {
+      color: #999;
+      text-decoration: line-through;
+      font-weight: 400;
+      font-size: 18px;
+      margin-right: 12px;
+    }
+    .price-sale-note {
+      color: #d63838;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    /* ───── cart actions ──────────────────────────── */
+    .cart-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .qty {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid #111;
+    }
+    .qty button {
+      background: #fff;
+      border: none;
+      width: 44px;
+      font-size: 18px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .qty input {
+      width: 50px;
+      text-align: center;
+      border: none;
+      border-left: 1px solid #ddd;
+      border-right: 1px solid #ddd;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .btn-cart {
+      flex: 1;
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+    .btn-cart:hover { opacity: 0.85; }
+
+    /* ───── description ───────────────────────────── */
+    .meta {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 8px 24px;
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
+    .meta dt { color: #777; }
+    .meta dd { margin: 0; }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .description {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #333;
+    }
+    .description p { margin: 0 0 12px; }
+
+    /* ───── responsive ────────────────────────────── */
+    @media (max-width: 900px) {
+      .product { grid-template-columns: 1fr; gap: 24px; }
+      h1 { font-size: 24px; margin-bottom: 16px; }
+      .price-current { font-size: 24px; }
+      .header-row { gap: 12px; padding: 12px 0; }
+      .logo { font-size: 16px; }
+      .search input, .search button { padding: 8px 10px; font-size: 13px; }
+      .icons { gap: 12px; }
+      .icon-btn span { display: none; }
+      .shell { padding: 0 12px; }
+      main { padding: 16px 0 40px; }
+      .volumes-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .volume { padding: 10px 8px; }
+      .volume .vol { font-size: 14px; }
+      .volume .price { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> карточка товара. Выбор объёма, описание, добавление в корзину, переход обратно в каталог.
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">PARFUM</div>
+        <div class="search">
+          <input type="text" placeholder="Найти аромат или бренд…">
+          <button>Найти</button>
+        </div>
+        <div class="icons">
+          <span class="icon-btn" title="Корзина">
+            <svg viewBox="0 0 24 24"><path d="M3 6h2l2.5 11h11L21 9H7"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
+            <span class="cart-badge">3</span>
+          </span>
+          <span class="icon-btn" title="Личный кабинет">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            <span>Войти</span>
+          </span>
+        </div>
+      </div>
+      <nav class="cats">
+        <a href="catalog.html">Все</a>
+        <a href="catalog.html">Женские</a>
+        <a href="catalog.html">Мужские</a>
+        <a href="catalog.html" class="active">Унисекс</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <nav class="breadcrumbs">
+      <a href="catalog.html">← Каталог</a>
+      <span class="sep">/</span>
+      <a href="catalog.html">Унисекс</a>
+      <span class="sep">/</span>
+      <span>Tom Ford — Lost Cherry</span>
+    </nav>
+
+    <div class="product">
+
+      <div class="product-image">
+        <div class="badges">
+          <span class="badge hit">Хит продаж</span>
+        </div>
+        <svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2">
+          <path d="M22 6h20v14h6v8H16v-8h6V6z"/>
+          <rect x="14" y="28" width="36" height="60" rx="3"/>
+        </svg>
+      </div>
+
+      <div class="info">
+
+        <div class="brand">Tom Ford</div>
+        <h1>Lost Cherry</h1>
+
+        <div class="volumes">
+          <span class="volumes-label">Объём флакона</span>
+          <div class="volumes-grid">
+            <div class="volume">
+              <div class="vol">5 мл</div>
+              <div class="price">990 ₽</div>
+            </div>
+            <div class="volume selected">
+              <div class="vol">10 мл</div>
+              <div class="price">1 790 ₽</div>
+              <div class="stock-warn">Осталось 2</div>
+            </div>
+            <div class="volume disabled">
+              <div class="vol">30 мл</div>
+              <div class="price">4 490 ₽</div>
+              <div class="out">Нет в наличии</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="price-block">
+          <div>
+            <span class="price-current">1 790 ₽</span>
+          </div>
+        </div>
+
+        <div class="cart-actions">
+          <div class="qty">
+            <button>−</button>
+            <input type="text" value="1">
+            <button>+</button>
+          </div>
+          <button class="btn-cart">В корзину</button>
+        </div>
+
+        <dl class="meta">
+          <dt>Бренд</dt><dd>Tom Ford</dd>
+          <dt>Страна</dt><dd>США</dd>
+          <dt>Категория</dt><dd>Унисекс</dd>
+          <dt>Год выпуска</dt><dd>2018</dd>
+        </dl>
+
+        <h2>Описание аромата</h2>
+        <div class="description">
+          <p>Lost Cherry — гурманский унисекс-аромат от Tom Ford. Он построен вокруг ноты сочной чёрной вишни, обволакивающей шлейфом ликёра и миндаля.</p>
+          <p>В верхних нотах — спелая вишня с маслянистым акцентом турецкой розы. Сердце аромата раскрывается миндальным ликёром и ноткой жасмина самбак. База — сандал, тонка, перуанский бальзам и пачули.</p>
+          <p>Аромат стойкий, шлейфистый, подходит для прохладных сезонов и вечерних выходов.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>
