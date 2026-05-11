@@ -3,7 +3,7 @@
     "name": "KOMNATA 26 — Catalog",
     "_postman_id": "8a4c3f1e-2b6d-4f9c-9c7e-1d2e3f4a5b60",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Catalog API интернет-магазина парфюмерии на разлив «КОМНАТА 26». Покрывает публичный каталог покупателя (без авторизации) и админские CRUD-операции над товарами и брендами (требуется Bearer JWT с role=admin). Бэкенд: catalog-service за API Gateway."
+    "description": "Catalog API интернет-магазина парфюмерии на разлив «КОМНАТА 26». Покрывает публичный каталог покупателя (без авторизации) и админские CRUD-операции над товарами и брендами (требуется Bearer admin JWT, выдаётся auth-service). Бэкенд: catalog-service за API Gateway."
   },
   "item": [
     {
@@ -191,7 +191,7 @@
     },
     {
       "name": "Admin — управление товарами",
-      "description": "CRUD над товарами и брендами. Требуется Bearer JWT с role=admin (получить через admin.postman_collection → Auth администратора → Login).",
+      "description": "CRUD над товарами и брендами. Требуется Bearer admin JWT (получить через auth.postman_collection → Admin auth → Login и положить в переменную коллекции {{token}}).",
       "item": [
         {
           "name": "Create product",

@@ -3,131 +3,19 @@
     "name": "KOMNATA 26 — Orders",
     "_postman_id": "b1f8d2a4-6c5e-4a1b-9f3d-7e8f9a0b1c20",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Orders API интернет-магазина «КОМНАТА 26»: авторизация покупателя по одноразовому коду, корзина (для гостя через X-Session-Id, для авторизованного — через Bearer JWT), оформление и история заказов, админская работа с заказами. Бэкенд: orders-service за API Gateway."
+    "description": "Orders API интернет-магазина «КОМНАТА 26»: корзина (для гостя через X-Session-Id, для авторизованного — через Bearer customer JWT), оформление и история заказов, админская работа с заказами и точками самовывоза. Бэкенд: orders-service за API Gateway. Все пользовательские идентификаторы (user_id) указывают на auth_db.users, JWT выдаются auth-service."
   },
   "item": [
     {
-      "name": "Auth покупателя",
-      "description": "Вход по одноразовому коду на email или телефон. После verify-code возвращается JWT с role=customer.",
-      "item": [
-        {
-          "name": "Request code",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/auth/customer/request-code",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "customer", "request-code"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"customer@example.com\"\n}"
-            },
-            "description": "Запрашивает отправку 6-значного одноразового кода на email или телефон. В теле должен быть указан ровно один из каналов: email или phone. Код действует 5 минут."
-          },
-          "response": [
-            {
-              "name": "200 OK — код отправлен",
-              "originalRequest": {
-                "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
-                "url": {
-                  "raw": "{{base_url}}/api/auth/customer/request-code",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "auth", "customer", "request-code"]
-                },
-                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\"}" }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"channel\": \"email\",\n  \"destination_masked\": \"c*******r@example.com\",\n  \"expires_in\": 300,\n  \"resend_after\": 60\n}"
-            },
-            {
-              "name": "400 Bad Request — нет email и phone",
-              "originalRequest": {
-                "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
-                "url": {
-                  "raw": "{{base_url}}/api/auth/customer/request-code",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "auth", "customer", "request-code"]
-                },
-                "body": { "mode": "raw", "raw": "{}" }
-              },
-              "status": "Bad Request",
-              "code": 400,
-              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Укажите email или телефон\",\n    \"fields\": {\n      \"email\": \"Заполните email или phone\",\n      \"phone\": \"Заполните email или phone\"\n    }\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Verify code",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "url": {
-              "raw": "{{base_url}}/api/auth/customer/verify-code",
-              "host": ["{{base_url}}"],
-              "path": ["api", "auth", "customer", "verify-code"]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"code\": \"482917\",\n  \"session_id\": \"sess_a1b2c3d4e5f6\"\n}"
-            },
-            "description": "Проверяет код. При успехе возвращает JWT покупателя. Если в теле передан session_id гостевой корзины — она будет слита с корзиной покупателя."
-          },
-          "response": [
-            {
-              "name": "200 OK — токен выдан",
-              "originalRequest": {
-                "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
-                "url": {
-                  "raw": "{{base_url}}/api/auth/customer/verify-code",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "auth", "customer", "verify-code"]
-                },
-                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\",\"code\":\"482917\"}" }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3MDAxIiwicm9sZSI6ImN1c3RvbWVyIiwiZXhwIjoxNzc4MzQ1NjAwfQ.fake-signature\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 2592000,\n  \"customer\": {\n    \"id\": 7001,\n    \"email\": \"customer@example.com\",\n    \"phone\": null,\n    \"first_name\": null\n  }\n}"
-            },
-            {
-              "name": "401 Unauthorized — неверный код",
-              "originalRequest": {
-                "method": "POST",
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
-                "url": {
-                  "raw": "{{base_url}}/api/auth/customer/verify-code",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "auth", "customer", "verify-code"]
-                },
-                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\",\"code\":\"000000\"}" }
-              },
-              "status": "Unauthorized",
-              "code": 401,
-              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CODE\",\n    \"message\": \"Неверный или просроченный код\",\n    \"fields\": { \"attempts_left\": 2 }\n  }\n}"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Cart",
-      "description": "Корзина поддерживает гостевой и авторизованный режим. Гость передаёт X-Session-Id (либо клиент получает его в Set-Cookie от Gateway). Авторизованный — Authorization: Bearer {{token}}. При логине гостевая корзина мерджится с пользовательской.",
+      "description": "Корзина поддерживает гостевой и авторизованный режим. Гость передаёт X-Session-Id (либо клиент получает его в Set-Cookie от Gateway). Авторизованный — Authorization: Bearer {{customer_token}}. При логине в auth-service гостевая корзина мерджится с пользовательской по user_id (auth_db.users).",
       "item": [
         {
           "name": "Get cart",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}", "description": "Опционально — для авторизованного покупателя" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}", "description": "Опционально — для авторизованного покупателя" },
               { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6", "description": "Для гостя — идентификатор сессии" }
             ],
             "url": {
@@ -398,7 +286,7 @@
     },
     {
       "name": "Checkout & orders покупателя",
-      "description": "Оформление заказа из корзины и работа с историей. Просмотр истории и отмена требуют JWT покупателя; оформление поддерживает гостя (через X-Session-Id) и авторизованного.",
+      "description": "Оформление заказа из корзины и работа с историей. Просмотр истории и отмена требуют Bearer customer JWT; оформление поддерживает гостя (через X-Session-Id) и авторизованного.",
       "item": [
         {
           "name": "List pickup points",
@@ -437,7 +325,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6", "description": "Для гостя. Для авторизованного — Authorization: Bearer {{token}}" }
+              { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6", "description": "Для гостя. Для авторизованного — Authorization: Bearer {{customer_token}}" }
             ],
             "url": {
               "raw": "{{base_url}}/api/orders",
@@ -448,7 +336,7 @@
               "mode": "raw",
               "raw": "{\n  \"pickup_point_id\": 1,\n  \"contact_name\": \"Анна Иванова\",\n  \"contact_phone\": \"+79161234567\",\n  \"contact_email\": \"customer@example.com\"\n}"
             },
-            "description": "Оформляет заказ из текущей корзины. Состав берётся из cart, после успеха корзина очищается. На этом шаге orders-service резервирует остатки через catalog-service."
+            "description": "Оформляет заказ из текущей корзины. Состав берётся из cart, после успеха корзина очищается. На этом шаге orders-service резервирует остатки через catalog-service. Если запрос пришёл с Bearer customer JWT — в order.user_id запишется id пользователя из auth_db.users; гостевой заказ создаётся без user_id."
           },
           "response": [
             {
@@ -469,7 +357,7 @@
               "status": "Created",
               "code": 201,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"pickup_point\": {\n    \"id\": 1,\n    \"address\": \"Москва, ул. Тверская, 5\",\n    \"working_hours\": \"Пн-Вс 10:00-22:00\",\n    \"phone\": \"+7 (495) 111-22-33\"\n  },\n  \"contact\": {\n    \"name\": \"Анна Иванова\",\n    \"phone\": \"+79161234567\",\n    \"email\": \"customer@example.com\"\n  },\n  \"items\": [\n    {\n      \"id\": 30001,\n      \"product_variant_id\": 5002,\n      \"product\": { \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" },\n      \"volume_ml\": 10,\n      \"price\": 1190,\n      \"quantity\": 2,\n      \"line_total\": 2380\n    },\n    {\n      \"id\": 30002,\n      \"product_variant_id\": 5021,\n      \"product\": { \"brand\": \"Creed\", \"name\": \"Aventus\" },\n      \"volume_ml\": 5,\n      \"price\": 990,\n      \"quantity\": 1,\n      \"line_total\": 990\n    }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\"\n}"
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"assembly\", \"title\": \"Сборка\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"pickup_point\": {\n    \"id\": 1,\n    \"address\": \"Москва, ул. Тверская, 5\",\n    \"working_hours\": \"Пн-Вс 10:00-22:00\",\n    \"phone\": \"+7 (495) 111-22-33\"\n  },\n  \"contact\": {\n    \"name\": \"Анна Иванова\",\n    \"phone\": \"+79161234567\",\n    \"email\": \"customer@example.com\"\n  },\n  \"items\": [\n    {\n      \"id\": 30001,\n      \"product_variant_id\": 5002,\n      \"product\": { \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" },\n      \"volume_ml\": 10,\n      \"price\": 1190,\n      \"quantity\": 2,\n      \"line_total\": 2380\n    },\n    {\n      \"id\": 30002,\n      \"product_variant_id\": 5021,\n      \"product\": { \"brand\": \"Creed\", \"name\": \"Aventus\" },\n      \"volume_ml\": 5,\n      \"price\": 990,\n      \"quantity\": 1,\n      \"line_total\": 990\n    }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\"\n}"
             },
             {
               "name": "400 Bad Request — пустая корзина",
@@ -518,27 +406,27 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
               { "key": "Accept", "value": "application/json" }
             ],
             "url": {
-              "raw": "{{base_url}}/api/orders?status=new&page=1&limit=20",
+              "raw": "{{base_url}}/api/orders?status=assembly&page=1&limit=20",
               "host": ["{{base_url}}"],
               "path": ["api", "orders"],
               "query": [
-                { "key": "status", "value": "new", "description": "new | confirmed | ready | issued | cancelled (опционально)" },
+                { "key": "status", "value": "assembly", "description": "assembly | ready | issued | cancelled (опционально)" },
                 { "key": "page", "value": "1" },
                 { "key": "limit", "value": "20" }
               ]
             },
-            "description": "История заказов авторизованного покупателя с возможностью фильтра по статусу."
+            "description": "История заказов авторизованного покупателя (фильтр по user_id из JWT). Поддерживает опциональный фильтр по статусу."
           },
           "response": [
             {
               "name": "200 OK — история заказов",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/orders",
                   "host": ["{{base_url}}"],
@@ -548,7 +436,7 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"items\": [\n    {\n      \"order_number\": \"K26-2026-00457\",\n      \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n      \"created_at\": \"2026-05-11T12:01:33Z\",\n      \"items_count\": 3,\n      \"total\": 3370,\n      \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\" }\n    },\n    {\n      \"order_number\": \"K26-2026-00301\",\n      \"status\": { \"code\": \"issued\", \"title\": \"Выдан\" },\n      \"created_at\": \"2026-04-22T18:12:00Z\",\n      \"items_count\": 1,\n      \"total\": 2490,\n      \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\" }\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 20, \"total\": 2, \"total_pages\": 1 }\n}"
+              "body": "{\n  \"items\": [\n    {\n      \"order_number\": \"K26-2026-00457\",\n      \"status\": { \"code\": \"assembly\", \"title\": \"Сборка\" },\n      \"created_at\": \"2026-05-11T12:01:33Z\",\n      \"items_count\": 3,\n      \"total\": 3370,\n      \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\" }\n    },\n    {\n      \"order_number\": \"K26-2026-00301\",\n      \"status\": { \"code\": \"issued\", \"title\": \"Выдан\" },\n      \"created_at\": \"2026-04-22T18:12:00Z\",\n      \"items_count\": 1,\n      \"total\": 2490,\n      \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\" }\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 20, \"total\": 2, \"total_pages\": 1 }\n}"
             },
             {
               "name": "401 Unauthorized",
@@ -573,7 +461,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
               { "key": "Accept", "value": "application/json" }
             ],
             "url": {
@@ -581,14 +469,14 @@
               "host": ["{{base_url}}"],
               "path": ["api", "orders", "K26-2026-00457"]
             },
-            "description": "Детали заказа. Покупатель видит только свои заказы."
+            "description": "Детали заказа. Покупатель видит только свои заказы (order.user_id должен совпадать с sub из JWT)."
           },
           "response": [
             {
               "name": "200 OK",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/orders/K26-2026-00457",
                   "host": ["{{base_url}}"],
@@ -598,13 +486,13 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"can_cancel\": true,\n  \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\" },\n  \"contact\": { \"name\": \"Анна Иванова\", \"phone\": \"+79161234567\", \"email\": \"customer@example.com\" },\n  \"items\": [\n    { \"id\": 30001, \"product_variant_id\": 5002, \"product\": { \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" }, \"volume_ml\": 10, \"price\": 1190, \"quantity\": 2, \"line_total\": 2380 },\n    { \"id\": 30002, \"product_variant_id\": 5021, \"product\": { \"brand\": \"Creed\", \"name\": \"Aventus\" }, \"volume_ml\": 5, \"price\": 990, \"quantity\": 1, \"line_total\": 990 }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\"\n}"
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"assembly\", \"title\": \"Сборка\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"can_cancel\": true,\n  \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\" },\n  \"contact\": { \"name\": \"Анна Иванова\", \"phone\": \"+79161234567\", \"email\": \"customer@example.com\" },\n  \"items\": [\n    { \"id\": 30001, \"product_variant_id\": 5002, \"product\": { \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" }, \"volume_ml\": 10, \"price\": 1190, \"quantity\": 2, \"line_total\": 2380 },\n    { \"id\": 30002, \"product_variant_id\": 5021, \"product\": { \"brand\": \"Creed\", \"name\": \"Aventus\" }, \"volume_ml\": 5, \"price\": 990, \"quantity\": 1, \"line_total\": 990 }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\"\n}"
             },
             {
               "name": "404 Not Found — чужой или несуществующий заказ",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/orders/K26-2026-99999",
                   "host": ["{{base_url}}"],
@@ -623,7 +511,7 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": {
@@ -643,7 +531,7 @@
               "originalRequest": {
                 "method": "POST",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{customer_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -662,7 +550,7 @@
               "name": "409 Conflict — заказ уже готов к выдаче",
               "originalRequest": {
                 "method": "POST",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/orders/K26-2026-00457/cancel",
                   "host": ["{{base_url}}"],
@@ -680,23 +568,23 @@
     },
     {
       "name": "Admin — управление заказами",
-      "description": "Просмотр и редактирование заказов администратором. Все эндпоинты требуют Bearer JWT с role=admin.",
+      "description": "Просмотр и редактирование заказов администратором. Все эндпоинты требуют Bearer admin JWT (выдаётся auth-service).",
       "item": [
         {
           "name": "List orders (admin)",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Accept", "value": "application/json" }
             ],
             "url": {
-              "raw": "{{base_url}}/api/admin/orders?status=new&customer_email=customer@example.com&customer_phone=&order_number=&date_from=2026-05-01&date_to=2026-05-31&page=1&limit=50",
+              "raw": "{{base_url}}/api/admin/orders?status=assembly&customer_email=customer@example.com&customer_phone=&order_number=&date_from=2026-05-01&date_to=2026-05-31&page=1&limit=50",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "orders"],
               "query": [
-                { "key": "status", "value": "new", "description": "new | confirmed | ready | issued | cancelled" },
-                { "key": "customer_email", "value": "customer@example.com" },
+                { "key": "status", "value": "assembly", "description": "assembly | ready | issued | cancelled" },
+                { "key": "customer_email", "value": "customer@example.com", "description": "Email пользователя из auth_db.users" },
                 { "key": "customer_phone", "value": "" },
                 { "key": "order_number", "value": "" },
                 { "key": "date_from", "value": "2026-05-01", "description": "ISO дата" },
@@ -705,31 +593,31 @@
                 { "key": "limit", "value": "50" }
               ]
             },
-            "description": "Листинг заказов с фильтрами. Используется на экране admin-orders."
+            "description": "Листинг заказов с фильтрами. Используется на экране admin-orders. Поля customer_email и customer_phone ищут по контактам в заказе (для гостевых) и по auth_db.users (для авторизованных)."
           },
           "response": [
             {
               "name": "200 OK",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
                 "url": {
-                  "raw": "{{base_url}}/api/admin/orders?status=new",
+                  "raw": "{{base_url}}/api/admin/orders?status=assembly",
                   "host": ["{{base_url}}"],
                   "path": ["api", "admin", "orders"],
-                  "query": [{ "key": "status", "value": "new" }]
+                  "query": [{ "key": "status", "value": "assembly" }]
                 }
               },
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"items\": [\n    {\n      \"order_number\": \"K26-2026-00457\",\n      \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n      \"created_at\": \"2026-05-11T12:01:33Z\",\n      \"customer\": { \"name\": \"Анна Иванова\", \"email\": \"customer@example.com\", \"phone\": \"+79161234567\" },\n      \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\" },\n      \"items_count\": 3,\n      \"total\": 3370\n    },\n    {\n      \"order_number\": \"K26-2026-00456\",\n      \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n      \"created_at\": \"2026-05-11T09:44:01Z\",\n      \"customer\": { \"name\": \"Михаил Петров\", \"email\": \"m.petrov@example.com\", \"phone\": \"+79169998877\" },\n      \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\" },\n      \"items_count\": 1,\n      \"total\": 990\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 50, \"total\": 2, \"total_pages\": 1 }\n}"
+              "body": "{\n  \"items\": [\n    {\n      \"order_number\": \"K26-2026-00457\",\n      \"status\": { \"code\": \"assembly\", \"title\": \"Сборка\" },\n      \"created_at\": \"2026-05-11T12:01:33Z\",\n      \"user_id\": 42,\n      \"contact\": { \"name\": \"Анна Иванова\", \"email\": \"customer@example.com\", \"phone\": \"+79161234567\" },\n      \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\" },\n      \"items_count\": 3,\n      \"total\": 3370\n    },\n    {\n      \"order_number\": \"K26-2026-00456\",\n      \"status\": { \"code\": \"assembly\", \"title\": \"Сборка\" },\n      \"created_at\": \"2026-05-11T09:44:01Z\",\n      \"user_id\": null,\n      \"contact\": { \"name\": \"Михаил Петров\", \"email\": \"m.petrov@example.com\", \"phone\": \"+79169998877\" },\n      \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\" },\n      \"items_count\": 1,\n      \"total\": 990\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 50, \"total\": 2, \"total_pages\": 1 }\n}"
             },
             {
               "name": "403 Forbidden — токен покупателя, не админа",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/admin/orders",
                   "host": ["{{base_url}}"],
@@ -748,7 +636,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Accept", "value": "application/json" }
             ],
             "url": {
@@ -756,14 +644,14 @@
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "orders", "K26-2026-00457"]
             },
-            "description": "Полная карточка заказа для админки. Включает историю смен статуса."
+            "description": "Полная карточка заказа для админки. Включает историю смен статуса и user_id (ссылка на auth_db.users) для авторизованных заказов."
           },
           "response": [
             {
               "name": "200 OK",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/admin/orders/K26-2026-00457",
                   "host": ["{{base_url}}"],
@@ -773,7 +661,7 @@
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"customer\": { \"id\": 7001, \"name\": \"Анна Иванова\", \"email\": \"customer@example.com\", \"phone\": \"+79161234567\" },\n  \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\" },\n  \"items\": [\n    { \"id\": 30001, \"product_variant_id\": 5002, \"product\": { \"id\": 1001, \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" }, \"volume_ml\": 10, \"price\": 1190, \"quantity\": 2, \"line_total\": 2380 },\n    { \"id\": 30002, \"product_variant_id\": 5021, \"product\": { \"id\": 1004, \"brand\": \"Creed\", \"name\": \"Aventus\" }, \"volume_ml\": 5, \"price\": 990, \"quantity\": 1, \"line_total\": 990 }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\",\n  \"status_history\": [\n    { \"status\": \"new\", \"at\": \"2026-05-11T12:01:33Z\", \"by\": \"system\" }\n  ]\n}"
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"assembly\", \"title\": \"Сборка\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"user_id\": 42,\n  \"contact\": { \"name\": \"Анна Иванова\", \"email\": \"customer@example.com\", \"phone\": \"+79161234567\" },\n  \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\" },\n  \"items\": [\n    { \"id\": 30001, \"product_variant_id\": 5002, \"product\": { \"id\": 1001, \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" }, \"volume_ml\": 10, \"price\": 1190, \"quantity\": 2, \"line_total\": 2380 },\n    { \"id\": 30002, \"product_variant_id\": 5021, \"product\": { \"id\": 1004, \"brand\": \"Creed\", \"name\": \"Aventus\" }, \"volume_ml\": 5, \"price\": 990, \"quantity\": 1, \"line_total\": 990 }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\",\n  \"status_history\": [\n    { \"status\": \"assembly\", \"at\": \"2026-05-11T12:01:33Z\", \"by\": \"system\" }\n  ]\n}"
             }
           ]
         },
@@ -782,7 +670,7 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": {
@@ -792,9 +680,9 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status_code\": \"confirmed\",\n  \"reason\": null\n}"
+              "raw": "{\n  \"status_code\": \"ready\",\n  \"reason\": null\n}"
             },
-            "description": "Перевод заказа в следующий статус. Допустимые переходы: new→confirmed, confirmed→ready, ready→issued, любой кроме issued→cancelled (требует reason). Резерв остатков снимается при cancelled, списание остатков происходит при issued."
+            "description": "Перевод заказа в следующий статус. Допустимые переходы: assembly→ready, ready→issued, assembly→cancelled, ready→cancelled (требует reason). Резерв остатков снимается при cancelled, списание остатков происходит при issued."
           },
           "response": [
             {
@@ -802,7 +690,7 @@
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -810,19 +698,19 @@
                   "host": ["{{base_url}}"],
                   "path": ["api", "admin", "orders", "K26-2026-00457", "status"]
                 },
-                "body": { "mode": "raw", "raw": "{\"status_code\":\"confirmed\"}" }
+                "body": { "mode": "raw", "raw": "{\"status_code\":\"ready\"}" }
               },
               "status": "OK",
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"confirmed\", \"title\": \"Подтверждён\" },\n  \"updated_at\": \"2026-05-11T12:15:42Z\"\n}"
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"ready\", \"title\": \"Готов к выдаче\" },\n  \"updated_at\": \"2026-05-11T12:15:42Z\"\n}"
             },
             {
               "name": "400 Bad Request — отмена без reason",
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -842,7 +730,7 @@
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -855,7 +743,7 @@
               "status": "Conflict",
               "code": 409,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_STATUS_TRANSITION\",\n    \"message\": \"Недопустимый переход статуса\",\n    \"fields\": { \"from\": \"new\", \"to\": \"issued\", \"allowed\": [\"confirmed\", \"cancelled\"] }\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_STATUS_TRANSITION\",\n    \"message\": \"Недопустимый переход статуса\",\n    \"fields\": { \"from\": \"assembly\", \"to\": \"issued\", \"allowed\": [\"ready\", \"cancelled\"] }\n  }\n}"
             }
           ]
         },
@@ -863,20 +751,20 @@
           "name": "Delete order item (admin)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/items/30002",
               "host": ["{{base_url}}"],
               "path": ["api", "admin", "orders", "K26-2026-00457", "items", "30002"]
             },
-            "description": "Удаляет позицию из заказа. Итоговая сумма пересчитывается автоматически. Резерв соответствующего варианта в catalog-service возвращается. Доступно только для статусов new и confirmed."
+            "description": "Удаляет позицию из заказа. Итоговая сумма пересчитывается автоматически. Резерв соответствующего варианта в catalog-service возвращается. Доступно только в статусе assembly (до перевода в «Готов к выдаче»)."
           },
           "response": [
             {
               "name": "200 OK — позиция удалена, заказ пересчитан",
               "originalRequest": {
                 "method": "DELETE",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/items/30002",
                   "host": ["{{base_url}}"],
@@ -892,7 +780,7 @@
               "name": "409 Conflict — нельзя удалить из готового заказа",
               "originalRequest": {
                 "method": "DELETE",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/items/30002",
                   "host": ["{{base_url}}"],
@@ -902,7 +790,7 @@
               "status": "Conflict",
               "code": 409,
               "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
-              "body": "{\n  \"error\": {\n    \"code\": \"CANNOT_MODIFY_ORDER\",\n    \"message\": \"Состав заказа можно менять только в статусах new и confirmed\",\n    \"fields\": { \"current_status\": \"ready\" }\n  }\n}"
+              "body": "{\n  \"error\": {\n    \"code\": \"CANNOT_MODIFY_ORDER\",\n    \"message\": \"Состав заказа можно менять только в статусе assembly\",\n    \"fields\": { \"current_status\": \"ready\" }\n  }\n}"
             }
           ]
         },
@@ -911,7 +799,7 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": {
@@ -931,7 +819,7 @@
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -951,7 +839,7 @@
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -972,14 +860,14 @@
     },
     {
       "name": "Admin — справочники",
-      "description": "Управление справочником точек самовывоза. Все эндпоинты требуют JWT админа.",
+      "description": "Управление справочником точек самовывоза. Все эндпоинты требуют Bearer admin JWT.",
       "item": [
         {
           "name": "List pickup points (admin)",
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Accept", "value": "application/json" }
             ],
             "url": {
@@ -994,7 +882,7 @@
               "name": "200 OK",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
                 "url": {
                   "raw": "{{base_url}}/api/admin/pickup-points",
                   "host": ["{{base_url}}"],
@@ -1013,7 +901,7 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": {
@@ -1033,7 +921,7 @@
               "originalRequest": {
                 "method": "POST",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -1053,7 +941,7 @@
               "originalRequest": {
                 "method": "POST",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -1075,7 +963,7 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": {
@@ -1095,7 +983,7 @@
               "originalRequest": {
                 "method": "PATCH",
                 "header": [
-                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
                   { "key": "Content-Type", "value": "application/json" }
                 ],
                 "url": {
@@ -1117,6 +1005,7 @@
   ],
   "variable": [
     { "key": "base_url", "value": "https://api.komnata26.ru" },
-    { "key": "token", "value": "" }
+    { "key": "customer_token", "value": "" },
+    { "key": "admin_token", "value": "" }
   ]
 }

@@ -1,0 +1,783 @@
+{
+  "info": {
+    "name": "KOMNATA 26 — Auth",
+    "_postman_id": "d3a1b4c2-8e5f-4d9a-b2c3-4e5f6a7b8c90",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Auth API интернет-магазина «КОМНАТА 26»: вход покупателя по одноразовому коду (email/телефон), вход администратора по email+паролю, общие сессионные эндпоинты (me/logout), профиль покупателя, управление учётками администраторов. Бэкенд: auth-service за API Gateway. Покупатели и админы — единая таблица auth_db.users, различаются полем role (customer | admin). Полученный JWT используется в коллекциях Catalog и Orders как переменная {{customer_token}} или {{admin_token}}."
+  },
+  "item": [
+    {
+      "name": "Customer auth",
+      "description": "Вход покупателя по одноразовому коду на email или телефон. После verify-code возвращается JWT с role=customer.",
+      "item": [
+        {
+          "name": "Request code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/customer/request-code",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "customer", "request-code"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"customer@example.com\"\n}"
+            },
+            "description": "Запрашивает отправку 6-значного одноразового кода. В поле identifier передаётся email или телефон в формате E.164 (auth-service определяет канал автоматически). Код действует 10 минут. На один identifier можно запросить новый код не чаще, чем раз в 60 секунд."
+          },
+          "response": [
+            {
+              "name": "200 OK — код отправлен",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/request-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "request-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"identifier\":\"customer@example.com\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"sent\": true,\n  \"channel\": \"email\",\n  \"destination_masked\": \"c*******r@example.com\",\n  \"expires_in_seconds\": 600,\n  \"resend_after_seconds\": 60\n}"
+            },
+            {
+              "name": "200 OK — код на телефон",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/request-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "request-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"identifier\":\"+79161234567\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"sent\": true,\n  \"channel\": \"sms\",\n  \"destination_masked\": \"+7916***4567\",\n  \"expires_in_seconds\": 600,\n  \"resend_after_seconds\": 60\n}"
+            },
+            {
+              "name": "400 Bad Request — пустой identifier",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/request-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "request-code"]
+                },
+                "body": { "mode": "raw", "raw": "{}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Укажите email или телефон\",\n    \"fields\": {\n      \"identifier\": \"Обязательное поле; ожидается email или телефон в формате E.164\"\n    }\n  }\n}"
+            },
+            {
+              "name": "429 Too Many Requests — лимит на запрос кода",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/request-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "request-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"identifier\":\"customer@example.com\"}" }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+                { "key": "Retry-After", "value": "42" }
+              ],
+              "body": "{\n  \"error\": {\n    \"code\": \"RATE_LIMITED\",\n    \"message\": \"Слишком много запросов кода. Повторите попытку позже.\",\n    \"fields\": { \"retry_after_seconds\": 42 }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/customer/verify-code",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "customer", "verify-code"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"customer@example.com\",\n  \"code\": \"473218\",\n  \"session_id\": \"sess_a1b2c3d4e5f6\"\n}"
+            },
+            "description": "Проверяет одноразовый код. При успехе создаёт пользователя в auth_db.users (если ещё не существует) и возвращает Bearer JWT с role=customer. Опциональное поле session_id — идентификатор гостевой корзины, который orders-service позднее использует для слияния с корзиной авторизованного покупателя."
+          },
+          "response": [
+            {
+              "name": "200 OK — токен выдан",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/verify-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "verify-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"identifier\":\"customer@example.com\",\"code\":\"473218\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsInJvbGUiOiJjdXN0b21lciIsImV4cCI6MTc3ODM0NTYwMH0.fake-customer-signature\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 2592000,\n  \"expires_at\": \"2026-06-10T12:00:00Z\",\n  \"user\": {\n    \"id\": 42,\n    \"email\": \"customer@example.com\",\n    \"phone\": null,\n    \"full_name\": null,\n    \"role\": \"customer\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized — неверный или просроченный код",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/verify-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "verify-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"identifier\":\"customer@example.com\",\"code\":\"000000\"}" }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CODE\",\n    \"message\": \"Неверный или просроченный код\",\n    \"fields\": { \"attempts_left\": 2 }\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — отсутствуют обязательные поля",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/verify-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "verify-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"identifier\":\"customer@example.com\"}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное тело запроса\",\n    \"fields\": {\n      \"code\": \"Обязательное поле; ожидается 6 цифр\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin auth",
+      "description": "Вход администратора по email и паролю. После /login возвращается Bearer JWT с role=admin сроком ~8 часов. Этот токен подходит для admin-эндпоинтов коллекций Catalog и Orders.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/admin/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "admin", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@komnata26.ru\",\n  \"password\": \"correct-horse-battery-staple\"\n}"
+            },
+            "description": "Аутентификация по email и паролю. Принимает только пользователей с role=admin и is_active=true. При успехе — Bearer JWT и профиль администратора."
+          },
+          "response": [
+            {
+              "name": "200 OK — токен выдан",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "login"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"admin@komnata26.ru\",\"password\":\"correct-horse-battery-staple\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzc4MzcyMDAwfQ.fake-admin-signature\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 28800,\n  \"expires_at\": \"2026-05-11T20:00:00Z\",\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"admin@komnata26.ru\",\n    \"phone\": null,\n    \"full_name\": \"Ксения Волынкина\",\n    \"role\": \"admin\"\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized — неверный email или пароль",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "login"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"admin@komnata26.ru\",\"password\":\"wrong\"}" }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CREDENTIALS\",\n    \"message\": \"Неверный email или пароль\"\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden — пользователь не админ",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "login"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\",\"password\":\"x\"}" }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"NOT_ADMIN\",\n    \"message\": \"Эндпоинт доступен только пользователям с ролью admin\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "login"]
+                },
+                "body": { "mode": "raw", "raw": "{}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное тело запроса\",\n    \"fields\": {\n      \"email\": \"Обязательное поле\",\n      \"password\": \"Обязательное поле\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Сессии",
+      "description": "Общие для покупателя и админа эндпоинты текущей сессии: получить себя по JWT, инвалидировать токен.",
+      "item": [
+        {
+          "name": "Get current user (me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Возвращает профиль текущего пользователя по JWT. Используется фронтами для валидации сессии и отображения имени/роли в шапке. Принимает как customer JWT, так и admin JWT."
+          },
+          "response": [
+            {
+              "name": "200 OK — customer",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 42,\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+79161234567\",\n  \"full_name\": \"Анна Иванова\",\n  \"role\": \"customer\",\n  \"created_at\": \"2026-04-22T18:12:00Z\"\n}"
+            },
+            {
+              "name": "200 OK — admin",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 1,\n  \"email\": \"admin@komnata26.ru\",\n  \"phone\": null,\n  \"full_name\": \"Ксения Волынкина\",\n  \"role\": \"admin\",\n  \"created_at\": \"2026-03-01T09:00:00Z\",\n  \"last_login_at\": \"2026-05-11T10:00:01Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized — нет токена",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "me"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Требуется авторизация\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Инвалидирует текущий JWT (добавляет jti в чёрный список до конца срока действия). Работает одинаково для customer и admin токенов."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/logout",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "401 Unauthorized — токен уже невалиден",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer expired" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/logout",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_TOKEN\",\n    \"message\": \"Токен просрочен или отозван\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Профиль покупателя",
+      "description": "Просмотр и редактирование собственного профиля. Требуется Bearer JWT с role=customer.",
+      "item": [
+        {
+          "name": "Get profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "description": "Полные данные профиля покупателя: контакты, имя, отметки о согласии на рассылки. В отличие от /me, возвращает больше детальных полей и используется на странице «Профиль» в личном кабинете."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "profile"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 42,\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+79161234567\",\n  \"full_name\": \"Анна Иванова\",\n  \"role\": \"customer\",\n  \"marketing_opt_in\": true,\n  \"created_at\": \"2026-04-22T18:12:00Z\",\n  \"updated_at\": \"2026-05-09T14:32:55Z\"\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "profile"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Требуется авторизация\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Анна Сергеевна Иванова\",\n  \"email\": \"anna.ivanova@example.com\",\n  \"phone\": \"+79161234567\",\n  \"marketing_opt_in\": false\n}"
+            },
+            "description": "Частичное обновление профиля. Можно менять full_name, email, phone и marketing_opt_in. При смене email или phone требуется повторное подтверждение через одноразовый код (фронт получит 202 Accepted и должен инициировать /request-code на новый канал). Если значение в теле совпадает с текущим — поле игнорируется."
+          },
+          "response": [
+            {
+              "name": "200 OK — профиль обновлён",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "profile"]
+                },
+                "body": { "mode": "raw", "raw": "{\"full_name\":\"Анна Сергеевна Иванова\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 42,\n  \"email\": \"customer@example.com\",\n  \"phone\": \"+79161234567\",\n  \"full_name\": \"Анна Сергеевна Иванова\",\n  \"role\": \"customer\",\n  \"marketing_opt_in\": false,\n  \"updated_at\": \"2026-05-11T13:50:12Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — некорректный email",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "profile"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"not-an-email\"}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное тело запроса\",\n    \"fields\": {\n      \"email\": \"Некорректный формат email\"\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Conflict — email уже занят другим пользователем",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/profile",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "profile"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"taken@example.com\"}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"EMAIL_ALREADY_EXISTS\",\n    \"message\": \"Этот email уже используется другим пользователем\",\n    \"fields\": { \"email\": \"taken@example.com\" }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Управление администраторами",
+      "description": "Листинг и CRUD над пользователями с role=admin. Все эндпоинты требуют Bearer JWT с role=admin. Под капотом — та же таблица auth_db.users, что и для покупателей, фильтр по role=admin.",
+      "item": [
+        {
+          "name": "List admin users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/admin/users?is_active=true&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "admin", "users"],
+              "query": [
+                { "key": "is_active", "value": "true", "description": "true | false (по умолчанию — все)" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
+            "description": "Листинг пользователей с role=admin. Поддерживает фильтр по активности и пагинацию."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"email\": \"admin@komnata26.ru\",\n      \"full_name\": \"Ксения Волынкина\",\n      \"role\": \"admin\",\n      \"is_active\": true,\n      \"last_login_at\": \"2026-05-11T10:00:01Z\",\n      \"created_at\": \"2026-03-01T09:00:00Z\"\n    },\n    {\n      \"id\": 2,\n      \"email\": \"manager@komnata26.ru\",\n      \"full_name\": \"Ольга Сидорова\",\n      \"role\": \"admin\",\n      \"is_active\": true,\n      \"last_login_at\": \"2026-05-10T18:42:11Z\",\n      \"created_at\": \"2026-04-15T11:30:00Z\"\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 50, \"total\": 2, \"total_pages\": 1 }\n}"
+            },
+            {
+              "name": "403 Forbidden — токен покупателя",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Недостаточно прав. Требуется роль admin.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create admin user",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "admin", "users"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newadmin@komnata26.ru\",\n  \"password\": \"TempPass!2026\",\n  \"full_name\": \"Иван Кузнецов\"\n}"
+            },
+            "description": "Создаёт пользователя с role=admin. Пароль хранится только в виде bcrypt-хеша. email уникален в пределах всей таблицы users."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"newadmin@komnata26.ru\",\"password\":\"TempPass!2026\",\"full_name\":\"Иван Кузнецов\"}" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 3,\n  \"email\": \"newadmin@komnata26.ru\",\n  \"full_name\": \"Иван Кузнецов\",\n  \"role\": \"admin\",\n  \"is_active\": true,\n  \"created_at\": \"2026-05-11T13:25:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — слабый пароль",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"newadmin@komnata26.ru\",\"password\":\"123\"}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное тело запроса\",\n    \"fields\": {\n      \"password\": \"Минимум 10 символов, должен содержать цифры и буквы\",\n      \"full_name\": \"Обязательное поле\"\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Conflict — email уже занят",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"admin@komnata26.ru\",\"password\":\"TempPass!2026\",\"full_name\":\"X\"}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"EMAIL_ALREADY_EXISTS\",\n    \"message\": \"Пользователь с таким email уже существует\",\n    \"fields\": { \"email\": \"admin@komnata26.ru\" }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update admin user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/admin/users/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "admin", "users", "3"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Иван Кузнецов-Смирнов\",\n  \"password\": \"NewStrongPass!2026\"\n}"
+            },
+            "description": "Частичное обновление. Если в теле есть password — он заменяет старый (с rehash). Поменять email или role нельзя — для смены роли используется отдельная процедура у бэкенда, для смены email — пересоздать учётку."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users/3",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users", "3"]
+                },
+                "body": { "mode": "raw", "raw": "{\"full_name\":\"Иван Кузнецов-Смирнов\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 3,\n  \"email\": \"newadmin@komnata26.ru\",\n  \"full_name\": \"Иван Кузнецов-Смирнов\",\n  \"role\": \"admin\",\n  \"is_active\": true,\n  \"updated_at\": \"2026-05-11T13:35:00Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users/9999",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users", "9999"]
+                },
+                "body": { "mode": "raw", "raw": "{\"full_name\":\"X\"}" }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"USER_NOT_FOUND\",\n    \"message\": \"Пользователь с id=9999 не найден или не является администратором\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Deactivate admin user",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/admin/users/3/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "admin", "users", "3", "deactivate"]
+            },
+            "description": "Помечает учётку как неактивную (is_active=false). Активные JWT этого пользователя сразу инвалидируются. Сам себя деактивировать нельзя."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users/3/deactivate",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users", "3", "deactivate"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 3,\n  \"email\": \"newadmin@komnata26.ru\",\n  \"is_active\": false,\n  \"deactivated_at\": \"2026-05-11T13:40:00Z\"\n}"
+            },
+            {
+              "name": "409 Conflict — попытка деактивировать самого себя",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/admin/users/1/deactivate",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "admin", "users", "1", "deactivate"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"CANNOT_DEACTIVATE_SELF\",\n    \"message\": \"Нельзя деактивировать собственную учётную запись\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://api.komnata26.ru" },
+    { "key": "customer_token", "value": "" },
+    { "key": "admin_token", "value": "" }
+  ]
+}
