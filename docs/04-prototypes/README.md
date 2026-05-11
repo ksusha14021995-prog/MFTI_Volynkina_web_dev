@@ -30,14 +30,3 @@
 | Админка | 12 | Карточка товара (редактирование) | [admin-product-form.html](https://ksusha14021995-prog.github.io/MFTI_Volynkina_web_dev/04-prototypes/admin-product-form.html) |
 | Админка | 13 | Список заказов | [admin-orders.html](https://ksusha14021995-prog.github.io/MFTI_Volynkina_web_dev/04-prototypes/admin-orders.html) |
 | Админка | 14 | Карточка заказа | [admin-order.html](https://ksusha14021995-prog.github.io/MFTI_Volynkina_web_dev/04-prototypes/admin-order.html) |
-
-## Локальный просмотр
-
-Для просмотра без интернета:
-
-```bash
-cd docs/04-prototypes
-python -m http.server 8000
-```
-
-Затем открой `http://localhost:8000` в браузере.
