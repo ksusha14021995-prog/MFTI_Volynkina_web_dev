@@ -1,0 +1,72 @@
+services:
+
+  catalog-db:
+    image: postgres:16
+    container_name: catalog-db
+    environment:
+      POSTGRES_USER: ${CATALOG_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CATALOG_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${CATALOG_POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_catalog:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  catalog-service:
+    build: ./catalog-service
+    container_name: catalog-service
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${CATALOG_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CATALOG_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${CATALOG_POSTGRES_DB}
+      POSTGRES_HOST: catalog-db
+      POSTGRES_PORT: "5432"
+    ports:
+      - "8001:8000"
+
+  orders-db:
+    image: postgres:16
+    container_name: orders-db
+    environment:
+      POSTGRES_USER: ${ORDERS_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ORDERS_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ORDERS_POSTGRES_DB}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data_orders:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  orders-service:
+    build: ./orders-service
+    container_name: orders-service
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      catalog-service:
+        condition: service_started
+    environment:
+      POSTGRES_USER: ${ORDERS_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ORDERS_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ORDERS_POSTGRES_DB}
+      POSTGRES_HOST: orders-db
+      POSTGRES_PORT: "5432"
+      CATALOG_SERVICE_URL: ${CATALOG_SERVICE_URL}
+    ports:
+      - "8002:8000"
+
+volumes:
+  postgres_data_catalog:
+  postgres_data_orders:

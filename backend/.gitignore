@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+*/app/.venv/
+
+# Environments / secrets
+.env
+.env.local
+*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (created at runtime)
+postgres_data_catalog/
+postgres_data_orders/
+
+# Alembic auto-gen artifacts to keep out (uncomment when you start using):
+# */alembic.ini.local
