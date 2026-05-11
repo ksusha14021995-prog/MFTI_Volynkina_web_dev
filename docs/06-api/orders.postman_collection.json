@@ -1,0 +1,1122 @@
+{
+  "info": {
+    "name": "KOMNATA 26 — Orders",
+    "_postman_id": "b1f8d2a4-6c5e-4a1b-9f3d-7e8f9a0b1c20",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Orders API интернет-магазина «КОМНАТА 26»: авторизация покупателя по одноразовому коду, корзина (для гостя через X-Session-Id, для авторизованного — через Bearer JWT), оформление и история заказов, админская работа с заказами. Бэкенд: orders-service за API Gateway."
+  },
+  "item": [
+    {
+      "name": "Auth покупателя",
+      "description": "Вход по одноразовому коду на email или телефон. После verify-code возвращается JWT с role=customer.",
+      "item": [
+        {
+          "name": "Request code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/customer/request-code",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "customer", "request-code"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\"\n}"
+            },
+            "description": "Запрашивает отправку 6-значного одноразового кода на email или телефон. В теле должен быть указан ровно один из каналов: email или phone. Код действует 5 минут."
+          },
+          "response": [
+            {
+              "name": "200 OK — код отправлен",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/request-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "request-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"channel\": \"email\",\n  \"destination_masked\": \"c*******r@example.com\",\n  \"expires_in\": 300,\n  \"resend_after\": 60\n}"
+            },
+            {
+              "name": "400 Bad Request — нет email и phone",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/request-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "request-code"]
+                },
+                "body": { "mode": "raw", "raw": "{}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Укажите email или телефон\",\n    \"fields\": {\n      \"email\": \"Заполните email или phone\",\n      \"phone\": \"Заполните email или phone\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/customer/verify-code",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "customer", "verify-code"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"code\": \"482917\",\n  \"session_id\": \"sess_a1b2c3d4e5f6\"\n}"
+            },
+            "description": "Проверяет код. При успехе возвращает JWT покупателя. Если в теле передан session_id гостевой корзины — она будет слита с корзиной покупателя."
+          },
+          "response": [
+            {
+              "name": "200 OK — токен выдан",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/verify-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "verify-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\",\"code\":\"482917\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3MDAxIiwicm9sZSI6ImN1c3RvbWVyIiwiZXhwIjoxNzc4MzQ1NjAwfQ.fake-signature\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 2592000,\n  \"customer\": {\n    \"id\": 7001,\n    \"email\": \"customer@example.com\",\n    \"phone\": null,\n    \"first_name\": null\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized — неверный код",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/customer/verify-code",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "customer", "verify-code"]
+                },
+                "body": { "mode": "raw", "raw": "{\"email\":\"customer@example.com\",\"code\":\"000000\"}" }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_CODE\",\n    \"message\": \"Неверный или просроченный код\",\n    \"fields\": { \"attempts_left\": 2 }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "description": "Корзина поддерживает гостевой и авторизованный режим. Гость передаёт X-Session-Id (либо клиент получает его в Set-Cookie от Gateway). Авторизованный — Authorization: Bearer {{token}}. При логине гостевая корзина мерджится с пользовательской.",
+      "item": [
+        {
+          "name": "Get cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "description": "Опционально — для авторизованного покупателя" },
+              { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6", "description": "Для гостя — идентификатор сессии" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Возвращает текущую корзину со всеми позициями и итоговой суммой."
+          },
+          "response": [
+            {
+              "name": "200 OK — корзина с двумя позициями",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }],
+                "url": {
+                  "raw": "{{base_url}}/api/cart",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 9001,\n  \"items\": [\n    {\n      \"id\": 12001,\n      \"product_variant_id\": 5002,\n      \"product\": { \"id\": 1001, \"slug\": \"tom-ford-lost-cherry\", \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" },\n      \"volume_ml\": 10,\n      \"price\": 1190,\n      \"quantity\": 2,\n      \"line_total\": 2380\n    },\n    {\n      \"id\": 12002,\n      \"product_variant_id\": 5021,\n      \"product\": { \"id\": 1004, \"slug\": \"creed-aventus\", \"brand\": \"Creed\", \"name\": \"Aventus\" },\n      \"volume_ml\": 5,\n      \"price\": 990,\n      \"quantity\": 1,\n      \"line_total\": 990\n    }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"updated_at\": \"2026-05-11T11:42:09Z\"\n}"
+            },
+            {
+              "name": "200 OK — пустая корзина",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "X-Session-Id", "value": "sess_new" }],
+                "url": {
+                  "raw": "{{base_url}}/api/cart",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 9002,\n  \"items\": [],\n  \"items_count\": 0,\n  \"total\": 0,\n  \"updated_at\": \"2026-05-11T11:42:09Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Add cart item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_variant_id\": 5002,\n  \"quantity\": 2\n}"
+            },
+            "description": "Добавляет позицию в корзину. Если такой product_variant_id уже есть — quantity суммируется. orders-service дёргает catalog-service, чтобы проверить активность товара и остаток (но не резервирует — резерв происходит при оформлении заказа)."
+          },
+          "response": [
+            {
+              "name": "201 Created — позиция добавлена",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items"]
+                },
+                "body": { "mode": "raw", "raw": "{\"product_variant_id\":5002,\"quantity\":2}" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 12001,\n  \"product_variant_id\": 5002,\n  \"product\": { \"id\": 1001, \"slug\": \"tom-ford-lost-cherry\", \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" },\n  \"volume_ml\": 10,\n  \"price\": 1190,\n  \"quantity\": 2,\n  \"line_total\": 2380\n}"
+            },
+            {
+              "name": "409 Conflict — недостаточно остатков",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items"]
+                },
+                "body": { "mode": "raw", "raw": "{\"product_variant_id\":5003,\"quantity\":50}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INSUFFICIENT_STOCK\",\n    \"message\": \"Недостаточно остатков на складе\",\n    \"fields\": {\n      \"product_variant_id\": 5003,\n      \"requested\": 50,\n      \"available\": 6\n    }\n  }\n}"
+            },
+            {
+              "name": "404 Not Found — товар деактивирован",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items"]
+                },
+                "body": { "mode": "raw", "raw": "{\"product_variant_id\":99999,\"quantity\":1}" }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VARIANT_NOT_FOUND\",\n    \"message\": \"Вариант товара не найден или снят с продажи\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update cart item quantity",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/12001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items", "12001"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "description": "Меняет количество в позиции. quantity >= 1. Чтобы удалить позицию — используйте DELETE."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items/12001",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items", "12001"]
+                },
+                "body": { "mode": "raw", "raw": "{\"quantity\":3}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 12001,\n  \"product_variant_id\": 5002,\n  \"quantity\": 3,\n  \"price\": 1190,\n  \"line_total\": 3570\n}"
+            },
+            {
+              "name": "400 Bad Request — quantity < 1",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items/12001",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items", "12001"]
+                },
+                "body": { "mode": "raw", "raw": "{\"quantity\":0}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное количество\",\n    \"fields\": { \"quantity\": \"Должно быть >= 1\" }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete cart item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }],
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/12001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items", "12001"]
+            },
+            "description": "Удаляет одну позицию из корзины."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items/12001",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items", "12001"]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }],
+                "url": {
+                  "raw": "{{base_url}}/api/cart/items/99999",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart", "items", "99999"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"CART_ITEM_NOT_FOUND\",\n    \"message\": \"Позиция корзины не найдена\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Clear cart",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Очищает всю корзину одним запросом."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }],
+                "url": {
+                  "raw": "{{base_url}}/api/cart",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "cart"]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Checkout & orders покупателя",
+      "description": "Оформление заказа из корзины и работа с историей. Просмотр истории и отмена требуют JWT покупателя; оформление поддерживает гостя (через X-Session-Id) и авторизованного.",
+      "item": [
+        {
+          "name": "List pickup points",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/pickup-points",
+              "host": ["{{base_url}}"],
+              "path": ["api", "pickup-points"]
+            },
+            "description": "Активные точки самовывоза для выбора на чекауте. Авторизация не требуется."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/pickup-points",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "pickup-points"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"address\": \"Москва, ул. Тверская, 5\",\n      \"working_hours\": \"Пн-Вс 10:00-22:00\",\n      \"phone\": \"+7 (495) 111-22-33\"\n    },\n    {\n      \"id\": 2,\n      \"address\": \"Москва, Большая Дмитровка, 10\",\n      \"working_hours\": \"Пн-Вс 11:00-21:00\",\n      \"phone\": \"+7 (495) 444-55-66\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create order (checkout)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6", "description": "Для гостя. Для авторизованного — Authorization: Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_point_id\": 1,\n  \"contact_name\": \"Анна Иванова\",\n  \"contact_phone\": \"+79161234567\",\n  \"contact_email\": \"customer@example.com\"\n}"
+            },
+            "description": "Оформляет заказ из текущей корзины. Состав берётся из cart, после успеха корзина очищается. На этом шаге orders-service резервирует остатки через catalog-service."
+          },
+          "response": [
+            {
+              "name": "201 Created — заказ создан",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders"]
+                },
+                "body": { "mode": "raw", "raw": "{\"pickup_point_id\":1,\"contact_name\":\"Анна Иванова\",\"contact_phone\":\"+79161234567\",\"contact_email\":\"customer@example.com\"}" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"pickup_point\": {\n    \"id\": 1,\n    \"address\": \"Москва, ул. Тверская, 5\",\n    \"working_hours\": \"Пн-Вс 10:00-22:00\",\n    \"phone\": \"+7 (495) 111-22-33\"\n  },\n  \"contact\": {\n    \"name\": \"Анна Иванова\",\n    \"phone\": \"+79161234567\",\n    \"email\": \"customer@example.com\"\n  },\n  \"items\": [\n    {\n      \"id\": 30001,\n      \"product_variant_id\": 5002,\n      \"product\": { \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" },\n      \"volume_ml\": 10,\n      \"price\": 1190,\n      \"quantity\": 2,\n      \"line_total\": 2380\n    },\n    {\n      \"id\": 30002,\n      \"product_variant_id\": 5021,\n      \"product\": { \"brand\": \"Creed\", \"name\": \"Aventus\" },\n      \"volume_ml\": 5,\n      \"price\": 990,\n      \"quantity\": 1,\n      \"line_total\": 990\n    }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\"\n}"
+            },
+            {
+              "name": "400 Bad Request — пустая корзина",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_empty" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders"]
+                },
+                "body": { "mode": "raw", "raw": "{\"pickup_point_id\":1,\"contact_name\":\"Анна\",\"contact_phone\":\"+79161234567\",\"contact_email\":\"customer@example.com\"}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"EMPTY_CART\",\n    \"message\": \"Невозможно оформить заказ: корзина пуста\"\n  }\n}"
+            },
+            {
+              "name": "409 Conflict — остатков не хватило",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Session-Id", "value": "sess_a1b2c3d4e5f6" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders"]
+                },
+                "body": { "mode": "raw", "raw": "{\"pickup_point_id\":1,\"contact_name\":\"Анна\",\"contact_phone\":\"+79161234567\",\"contact_email\":\"customer@example.com\"}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INSUFFICIENT_STOCK\",\n    \"message\": \"Часть позиций больше недоступна в нужном количестве\",\n    \"fields\": {\n      \"items\": [\n        { \"product_variant_id\": 5021, \"requested\": 1, \"available\": 0 }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "List my orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?status=new&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                { "key": "status", "value": "new", "description": "new | confirmed | ready | issued | cancelled (опционально)" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "История заказов авторизованного покупателя с возможностью фильтра по статусу."
+          },
+          "response": [
+            {
+              "name": "200 OK — история заказов",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    {\n      \"order_number\": \"K26-2026-00457\",\n      \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n      \"created_at\": \"2026-05-11T12:01:33Z\",\n      \"items_count\": 3,\n      \"total\": 3370,\n      \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\" }\n    },\n    {\n      \"order_number\": \"K26-2026-00301\",\n      \"status\": { \"code\": \"issued\", \"title\": \"Выдан\" },\n      \"created_at\": \"2026-04-22T18:12:00Z\",\n      \"items_count\": 1,\n      \"total\": 2490,\n      \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\" }\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 20, \"total\": 2, \"total_pages\": 1 }\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Требуется авторизация\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get my order",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/K26-2026-00457",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "K26-2026-00457"]
+            },
+            "description": "Детали заказа. Покупатель видит только свои заказы."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/orders/K26-2026-00457",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders", "K26-2026-00457"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"can_cancel\": true,\n  \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\" },\n  \"contact\": { \"name\": \"Анна Иванова\", \"phone\": \"+79161234567\", \"email\": \"customer@example.com\" },\n  \"items\": [\n    { \"id\": 30001, \"product_variant_id\": 5002, \"product\": { \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" }, \"volume_ml\": 10, \"price\": 1190, \"quantity\": 2, \"line_total\": 2380 },\n    { \"id\": 30002, \"product_variant_id\": 5021, \"product\": { \"brand\": \"Creed\", \"name\": \"Aventus\" }, \"volume_ml\": 5, \"price\": 990, \"quantity\": 1, \"line_total\": 990 }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\"\n}"
+            },
+            {
+              "name": "404 Not Found — чужой или несуществующий заказ",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/orders/K26-2026-99999",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders", "K26-2026-99999"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"ORDER_NOT_FOUND\",\n    \"message\": \"Заказ не найден\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Cancel my order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/K26-2026-00457/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "K26-2026-00457", "cancel"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Передумала покупать\"\n}"
+            },
+            "description": "Отмена своего заказа покупателем. Доступна только до статуса ready (Готов к выдаче). После статуса ready — отказ 409."
+          },
+          "response": [
+            {
+              "name": "200 OK — заказ отменён",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/orders/K26-2026-00457/cancel",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders", "K26-2026-00457", "cancel"]
+                },
+                "body": { "mode": "raw", "raw": "{\"reason\":\"Передумала покупать\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"cancelled\", \"title\": \"Отменён\" },\n  \"cancelled_at\": \"2026-05-11T12:35:00Z\",\n  \"cancelled_by\": \"customer\",\n  \"reason\": \"Передумала покупать\"\n}"
+            },
+            {
+              "name": "409 Conflict — заказ уже готов к выдаче",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/orders/K26-2026-00457/cancel",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "orders", "K26-2026-00457", "cancel"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"CANNOT_CANCEL\",\n    \"message\": \"Заказ уже готов к выдаче и не может быть отменён покупателем. Свяжитесь с поддержкой.\",\n    \"fields\": { \"current_status\": \"ready\" }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — управление заказами",
+      "description": "Просмотр и редактирование заказов администратором. Все эндпоинты требуют Bearer JWT с role=admin.",
+      "item": [
+        {
+          "name": "List orders (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders?status=new&customer_email=customer@example.com&customer_phone=&order_number=&date_from=2026-05-01&date_to=2026-05-31&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders"],
+              "query": [
+                { "key": "status", "value": "new", "description": "new | confirmed | ready | issued | cancelled" },
+                { "key": "customer_email", "value": "customer@example.com" },
+                { "key": "customer_phone", "value": "" },
+                { "key": "order_number", "value": "" },
+                { "key": "date_from", "value": "2026-05-01", "description": "ISO дата" },
+                { "key": "date_to", "value": "2026-05-31" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
+            "description": "Листинг заказов с фильтрами. Используется на экране admin-orders."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders?status=new",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders"],
+                  "query": [{ "key": "status", "value": "new" }]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    {\n      \"order_number\": \"K26-2026-00457\",\n      \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n      \"created_at\": \"2026-05-11T12:01:33Z\",\n      \"customer\": { \"name\": \"Анна Иванова\", \"email\": \"customer@example.com\", \"phone\": \"+79161234567\" },\n      \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\" },\n      \"items_count\": 3,\n      \"total\": 3370\n    },\n    {\n      \"order_number\": \"K26-2026-00456\",\n      \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n      \"created_at\": \"2026-05-11T09:44:01Z\",\n      \"customer\": { \"name\": \"Михаил Петров\", \"email\": \"m.petrov@example.com\", \"phone\": \"+79169998877\" },\n      \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\" },\n      \"items_count\": 1,\n      \"total\": 990\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 50, \"total\": 2, \"total_pages\": 1 }\n}"
+            },
+            {
+              "name": "403 Forbidden — токен покупателя, не админа",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Недостаточно прав. Требуется роль admin.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get order (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/K26-2026-00457",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "K26-2026-00457"]
+            },
+            "description": "Полная карточка заказа для админки. Включает историю смен статуса."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"new\", \"title\": \"Новый\" },\n  \"created_at\": \"2026-05-11T12:01:33Z\",\n  \"customer\": { \"id\": 7001, \"name\": \"Анна Иванова\", \"email\": \"customer@example.com\", \"phone\": \"+79161234567\" },\n  \"pickup_point\": { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\" },\n  \"items\": [\n    { \"id\": 30001, \"product_variant_id\": 5002, \"product\": { \"id\": 1001, \"brand\": \"Tom Ford\", \"name\": \"Lost Cherry\" }, \"volume_ml\": 10, \"price\": 1190, \"quantity\": 2, \"line_total\": 2380 },\n    { \"id\": 30002, \"product_variant_id\": 5021, \"product\": { \"id\": 1004, \"brand\": \"Creed\", \"name\": \"Aventus\" }, \"volume_ml\": 5, \"price\": 990, \"quantity\": 1, \"line_total\": 990 }\n  ],\n  \"items_count\": 3,\n  \"total\": 3370,\n  \"payment_method\": \"on_pickup\",\n  \"delivery_method\": \"pickup\",\n  \"status_history\": [\n    { \"status\": \"new\", \"at\": \"2026-05-11T12:01:33Z\", \"by\": \"system\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Change order status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "K26-2026-00457", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status_code\": \"confirmed\",\n  \"reason\": null\n}"
+            },
+            "description": "Перевод заказа в следующий статус. Допустимые переходы: new→confirmed, confirmed→ready, ready→issued, любой кроме issued→cancelled (требует reason). Резерв остатков снимается при cancelled, списание остатков происходит при issued."
+          },
+          "response": [
+            {
+              "name": "200 OK — статус изменён",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/status",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "status"]
+                },
+                "body": { "mode": "raw", "raw": "{\"status_code\":\"confirmed\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"status\": { \"code\": \"confirmed\", \"title\": \"Подтверждён\" },\n  \"updated_at\": \"2026-05-11T12:15:42Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — отмена без reason",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/status",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "status"]
+                },
+                "body": { "mode": "raw", "raw": "{\"status_code\":\"cancelled\"}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Для отмены укажите причину\",\n    \"fields\": { \"reason\": \"Обязательное поле при status_code=cancelled\" }\n  }\n}"
+            },
+            {
+              "name": "409 Conflict — недопустимый переход",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/status",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "status"]
+                },
+                "body": { "mode": "raw", "raw": "{\"status_code\":\"issued\"}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"INVALID_STATUS_TRANSITION\",\n    \"message\": \"Недопустимый переход статуса\",\n    \"fields\": { \"from\": \"new\", \"to\": \"issued\", \"allowed\": [\"confirmed\", \"cancelled\"] }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete order item (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/items/30002",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "K26-2026-00457", "items", "30002"]
+            },
+            "description": "Удаляет позицию из заказа. Итоговая сумма пересчитывается автоматически. Резерв соответствующего варианта в catalog-service возвращается. Доступно только для статусов new и confirmed."
+          },
+          "response": [
+            {
+              "name": "200 OK — позиция удалена, заказ пересчитан",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/items/30002",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "items", "30002"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"items_count\": 2,\n  \"total\": 2380,\n  \"removed_item_id\": 30002\n}"
+            },
+            {
+              "name": "409 Conflict — нельзя удалить из готового заказа",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/items/30002",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "items", "30002"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"CANNOT_MODIFY_ORDER\",\n    \"message\": \"Состав заказа можно менять только в статусах new и confirmed\",\n    \"fields\": { \"current_status\": \"ready\" }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Change order pickup point",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/pickup-point",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "orders", "K26-2026-00457", "pickup-point"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_point_id\": 2\n}"
+            },
+            "description": "Сменить точку самовывоза. Доступно до статуса ready."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/pickup-point",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "pickup-point"]
+                },
+                "body": { "mode": "raw", "raw": "{\"pickup_point_id\":2}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"order_number\": \"K26-2026-00457\",\n  \"pickup_point\": { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\", \"working_hours\": \"Пн-Вс 11:00-21:00\", \"phone\": \"+7 (495) 444-55-66\" }\n}"
+            },
+            {
+              "name": "404 Not Found — несуществующая точка",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/orders/K26-2026-00457/pickup-point",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "orders", "K26-2026-00457", "pickup-point"]
+                },
+                "body": { "mode": "raw", "raw": "{\"pickup_point_id\":999}" }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"PICKUP_POINT_NOT_FOUND\",\n    \"message\": \"Точка самовывоза не найдена или неактивна\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — справочники",
+      "description": "Управление справочником точек самовывоза. Все эндпоинты требуют JWT админа.",
+      "item": [
+        {
+          "name": "List pickup points (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/pickup-points",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "pickup-points"]
+            },
+            "description": "Все точки самовывоза, включая неактивные."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/pickup-points",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "pickup-points"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    { \"id\": 1, \"address\": \"Москва, ул. Тверская, 5\", \"working_hours\": \"Пн-Вс 10:00-22:00\", \"phone\": \"+7 (495) 111-22-33\", \"is_active\": true },\n    { \"id\": 2, \"address\": \"Москва, Большая Дмитровка, 10\", \"working_hours\": \"Пн-Вс 11:00-21:00\", \"phone\": \"+7 (495) 444-55-66\", \"is_active\": true }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create pickup point",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/pickup-points",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "pickup-points"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Москва, Кутузовский проспект, 24\",\n  \"working_hours\": \"Пн-Сб 10:00-21:00, Вс 12:00-20:00\",\n  \"phone\": \"+7 (495) 777-88-99\",\n  \"is_active\": true\n}"
+            },
+            "description": "Создаёт новую точку самовывоза."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/pickup-points",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "pickup-points"]
+                },
+                "body": { "mode": "raw", "raw": "{\"address\":\"Москва, Кутузовский проспект, 24\"}" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 3,\n  \"address\": \"Москва, Кутузовский проспект, 24\",\n  \"working_hours\": \"Пн-Сб 10:00-21:00, Вс 12:00-20:00\",\n  \"phone\": \"+7 (495) 777-88-99\",\n  \"is_active\": true,\n  \"created_at\": \"2026-05-11T12:50:00Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/pickup-points",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "pickup-points"]
+                },
+                "body": { "mode": "raw", "raw": "{}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное тело запроса\",\n    \"fields\": {\n      \"address\": \"Обязательное поле\",\n      \"working_hours\": \"Обязательное поле\",\n      \"phone\": \"Обязательное поле\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update pickup point",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/pickup-points/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "pickup-points", "3"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"working_hours\": \"Пн-Вс 10:00-22:00\",\n  \"is_active\": false\n}"
+            },
+            "description": "Частичное обновление. Можно поменять любые поля; для деактивации — is_active=false. Деактивированная точка исчезает из публичного списка, но остаётся в существующих заказах."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/pickup-points/3",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "pickup-points", "3"]
+                },
+                "body": { "mode": "raw", "raw": "{\"is_active\":false}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 3,\n  \"address\": \"Москва, Кутузовский проспект, 24\",\n  \"working_hours\": \"Пн-Вс 10:00-22:00\",\n  \"phone\": \"+7 (495) 777-88-99\",\n  \"is_active\": false,\n  \"updated_at\": \"2026-05-11T13:02:09Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://api.komnata26.ru" },
+    { "key": "token", "value": "" }
+  ]
+}

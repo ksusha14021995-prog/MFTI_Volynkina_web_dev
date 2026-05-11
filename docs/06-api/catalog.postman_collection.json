@@ -1,0 +1,534 @@
+{
+  "info": {
+    "name": "KOMNATA 26 — Catalog",
+    "_postman_id": "8a4c3f1e-2b6d-4f9c-9c7e-1d2e3f4a5b60",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Catalog API интернет-магазина парфюмерии на разлив «КОМНАТА 26». Покрывает публичный каталог покупателя (без авторизации) и админские CRUD-операции над товарами и брендами (требуется Bearer JWT с role=admin). Бэкенд: catalog-service за API Gateway."
+  },
+  "item": [
+    {
+      "name": "Public — каталог покупателя",
+      "description": "Эндпоинты для витрины. Авторизация не требуется. Возвращают только активные товары (is_active=true).",
+      "item": [
+        {
+          "name": "List products (с фильтрами)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/catalog/products?brand_ids[]=1&brand_ids[]=2&country_ids[]=1&gender=female&price_min=500&price_max=3000&is_hit=true&search=cherry&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "catalog", "products"],
+              "query": [
+                { "key": "brand_ids[]", "value": "1", "description": "ID брендов (можно несколько)" },
+                { "key": "brand_ids[]", "value": "2" },
+                { "key": "country_ids[]", "value": "1", "description": "ID стран" },
+                { "key": "gender", "value": "female", "description": "female | male | unisex" },
+                { "key": "price_min", "value": "500", "description": "Минимальная цена (₽) среди вариантов объёма" },
+                { "key": "price_max", "value": "3000" },
+                { "key": "is_hit", "value": "true", "description": "Только хиты продаж" },
+                { "key": "search", "value": "cherry", "description": "Поиск по названию аромата и бренду" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Возвращает страницу товаров для витрины. Все query-параметры опциональны. Цена в карточке — минимальная среди вариантов объёма."
+          },
+          "response": [
+            {
+              "name": "200 OK — найдено 2 товара",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Accept", "value": "application/json" }],
+                "url": {
+                  "raw": "{{base_url}}/api/catalog/products?brand_ids[]=1&is_hit=true&page=1&limit=20",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "catalog", "products"],
+                  "query": [
+                    { "key": "brand_ids[]", "value": "1" },
+                    { "key": "is_hit", "value": "true" },
+                    { "key": "page", "value": "1" },
+                    { "key": "limit", "value": "20" }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    {\n      \"id\": 1001,\n      \"slug\": \"tom-ford-lost-cherry\",\n      \"brand\": { \"id\": 1, \"name\": \"Tom Ford\" },\n      \"name\": \"Lost Cherry\",\n      \"gender\": \"unisex\",\n      \"country\": { \"id\": 2, \"name\": \"США\" },\n      \"image_url\": \"https://cdn.komnata26.ru/products/tom-ford-lost-cherry.jpg\",\n      \"price_min\": 690,\n      \"price_max\": 2890,\n      \"is_hit\": true,\n      \"discount_percent\": 0\n    },\n    {\n      \"id\": 1002,\n      \"slug\": \"ysl-libre\",\n      \"brand\": { \"id\": 2, \"name\": \"Yves Saint Laurent\" },\n      \"name\": \"Libre\",\n      \"gender\": \"female\",\n      \"country\": { \"id\": 1, \"name\": \"Франция\" },\n      \"image_url\": \"https://cdn.komnata26.ru/products/ysl-libre.jpg\",\n      \"price_min\": 590,\n      \"price_max\": 2490,\n      \"is_hit\": true,\n      \"discount_percent\": 10\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 20,\n    \"total\": 2,\n    \"total_pages\": 1\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request — невалидный price_min",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/catalog/products?price_min=abc",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "catalog", "products"],
+                  "query": [{ "key": "price_min", "value": "abc" }]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректные параметры запроса\",\n    \"fields\": {\n      \"price_min\": \"Должно быть целым неотрицательным числом\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get product by slug",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/catalog/products/tom-ford-lost-cherry",
+              "host": ["{{base_url}}"],
+              "path": ["api", "catalog", "products", "tom-ford-lost-cherry"]
+            },
+            "description": "Детальная карточка товара по slug. Содержит описание, изображение и все варианты объёма с актуальными ценами и остатками."
+          },
+          "response": [
+            {
+              "name": "200 OK — карточка товара",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/catalog/products/tom-ford-lost-cherry",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "catalog", "products", "tom-ford-lost-cherry"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 1001,\n  \"slug\": \"tom-ford-lost-cherry\",\n  \"brand\": { \"id\": 1, \"name\": \"Tom Ford\" },\n  \"name\": \"Lost Cherry\",\n  \"gender\": \"unisex\",\n  \"country\": { \"id\": 2, \"name\": \"США\" },\n  \"description\": \"Сладкая, обволакивающая композиция: чёрная вишня, миндаль, тонкинский боб, сандал.\",\n  \"image_url\": \"https://cdn.komnata26.ru/products/tom-ford-lost-cherry.jpg\",\n  \"is_hit\": true,\n  \"discount_percent\": 0,\n  \"variants\": [\n    { \"id\": 5001, \"volume_ml\": 5, \"price\": 690, \"old_price\": null, \"stock\": 42 },\n    { \"id\": 5002, \"volume_ml\": 10, \"price\": 1190, \"old_price\": null, \"stock\": 18 },\n    { \"id\": 5003, \"volume_ml\": 30, \"price\": 2890, \"old_price\": null, \"stock\": 6 }\n  ]\n}"
+            },
+            {
+              "name": "404 Not Found — slug не найден",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/catalog/products/unknown-slug",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "catalog", "products", "unknown-slug"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"PRODUCT_NOT_FOUND\",\n    \"message\": \"Товар не найден или снят с продажи\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "List brands",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/catalog/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "catalog", "brands"]
+            },
+            "description": "Справочник брендов для блока фильтров на витрине. Возвращает только бренды, у которых есть хотя бы один активный товар."
+          },
+          "response": [
+            {
+              "name": "200 OK — список брендов",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/catalog/brands",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "catalog", "brands"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    { \"id\": 1, \"name\": \"Tom Ford\", \"products_count\": 14 },\n    { \"id\": 2, \"name\": \"Yves Saint Laurent\", \"products_count\": 9 },\n    { \"id\": 3, \"name\": \"Maison Margiela\", \"products_count\": 11 },\n    { \"id\": 4, \"name\": \"Creed\", \"products_count\": 7 },\n    { \"id\": 5, \"name\": \"Byredo\", \"products_count\": 6 }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "List countries",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/catalog/countries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "catalog", "countries"]
+            },
+            "description": "Справочник стран-производителей для блока фильтров на витрине."
+          },
+          "response": [
+            {
+              "name": "200 OK — список стран",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/catalog/countries",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "catalog", "countries"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    { \"id\": 1, \"name\": \"Франция\", \"products_count\": 21 },\n    { \"id\": 2, \"name\": \"США\", \"products_count\": 14 },\n    { \"id\": 3, \"name\": \"Великобритания\", \"products_count\": 8 },\n    { \"id\": 4, \"name\": \"Италия\", \"products_count\": 4 }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — управление товарами",
+      "description": "CRUD над товарами и брендами. Требуется Bearer JWT с role=admin (получить через admin.postman_collection → Auth администратора → Login).",
+      "item": [
+        {
+          "name": "Create product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/catalog/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "catalog", "products"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand_id\": 3,\n  \"name\": \"Replica Beach Walk\",\n  \"slug\": \"margiela-replica-beach-walk\",\n  \"gender\": \"unisex\",\n  \"country_id\": 1,\n  \"description\": \"Лёгкая летняя композиция: кокос, бергамот, кедр, мускус. Запах моря и пляжного полотенца.\",\n  \"image_url\": \"https://cdn.komnata26.ru/products/margiela-replica-beach-walk.jpg\",\n  \"is_active\": true,\n  \"is_hit\": false,\n  \"discount_percent\": 0,\n  \"variants\": [\n    { \"volume_ml\": 5, \"price\": 590, \"stock\": 50 },\n    { \"volume_ml\": 10, \"price\": 990, \"stock\": 30 },\n    { \"volume_ml\": 30, \"price\": 2490, \"stock\": 12 }\n  ]\n}"
+            },
+            "description": "Создаёт новый товар вместе с вариантами объёма. slug должен быть уникальным; если опущен — генерируется из brand + name."
+          },
+          "response": [
+            {
+              "name": "201 Created — товар создан",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"brand_id\":3,\"name\":\"Replica Beach Walk\"}"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 1003,\n  \"slug\": \"margiela-replica-beach-walk\",\n  \"brand\": { \"id\": 3, \"name\": \"Maison Margiela\" },\n  \"name\": \"Replica Beach Walk\",\n  \"gender\": \"unisex\",\n  \"country\": { \"id\": 1, \"name\": \"Франция\" },\n  \"description\": \"Лёгкая летняя композиция: кокос, бергамот, кедр, мускус. Запах моря и пляжного полотенца.\",\n  \"image_url\": \"https://cdn.komnata26.ru/products/margiela-replica-beach-walk.jpg\",\n  \"is_active\": true,\n  \"is_hit\": false,\n  \"discount_percent\": 0,\n  \"variants\": [\n    { \"id\": 5010, \"volume_ml\": 5, \"price\": 590, \"stock\": 50 },\n    { \"id\": 5011, \"volume_ml\": 10, \"price\": 990, \"stock\": 30 },\n    { \"id\": 5012, \"volume_ml\": 30, \"price\": 2490, \"stock\": 12 }\n  ],\n  \"created_at\": \"2026-05-11T10:23:14Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request — пустое название",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products"]
+                },
+                "body": { "mode": "raw", "raw": "{}" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Некорректное тело запроса\",\n    \"fields\": {\n      \"brand_id\": \"Обязательное поле\",\n      \"name\": \"Обязательное поле\",\n      \"variants\": \"Должен быть хотя бы один вариант объёма\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized — нет токена",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Требуется авторизация\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "List products (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/catalog/products?search=cherry&brand_id=1&is_active=true&page=1&limit=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "catalog", "products"],
+              "query": [
+                { "key": "search", "value": "cherry", "description": "Поиск по названию аромата" },
+                { "key": "brand_id", "value": "1", "description": "Фильтр по бренду" },
+                { "key": "is_active", "value": "true", "description": "true | false (по умолчанию — все)" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" }
+              ]
+            },
+            "description": "Админский листинг товаров. В отличие от публичного, возвращает и неактивные тоже, плюс показывает остатки и активность."
+          },
+          "response": [
+            {
+              "name": "200 OK — товары админки",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products?search=cherry",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products"],
+                  "query": [{ "key": "search", "value": "cherry" }]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"items\": [\n    {\n      \"id\": 1001,\n      \"slug\": \"tom-ford-lost-cherry\",\n      \"brand\": { \"id\": 1, \"name\": \"Tom Ford\" },\n      \"name\": \"Lost Cherry\",\n      \"is_active\": true,\n      \"is_hit\": true,\n      \"discount_percent\": 0,\n      \"variants\": [\n        { \"id\": 5001, \"volume_ml\": 5, \"price\": 690, \"stock\": 42 },\n        { \"id\": 5002, \"volume_ml\": 10, \"price\": 1190, \"stock\": 18 },\n        { \"id\": 5003, \"volume_ml\": 30, \"price\": 2890, \"stock\": 6 }\n      ]\n    }\n  ],\n  \"pagination\": { \"page\": 1, \"limit\": 50, \"total\": 1, \"total_pages\": 1 }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get product (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/catalog/products/1001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "catalog", "products", "1001"]
+            },
+            "description": "Получить товар по id для формы редактирования. Включает неактивные."
+          },
+          "response": [
+            {
+              "name": "200 OK — карточка для редактирования",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products/1001",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products", "1001"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 1001,\n  \"slug\": \"tom-ford-lost-cherry\",\n  \"brand\": { \"id\": 1, \"name\": \"Tom Ford\" },\n  \"name\": \"Lost Cherry\",\n  \"gender\": \"unisex\",\n  \"country\": { \"id\": 2, \"name\": \"США\" },\n  \"description\": \"Сладкая, обволакивающая композиция: чёрная вишня, миндаль, тонкинский боб, сандал.\",\n  \"image_url\": \"https://cdn.komnata26.ru/products/tom-ford-lost-cherry.jpg\",\n  \"is_active\": true,\n  \"is_hit\": true,\n  \"discount_percent\": 0,\n  \"variants\": [\n    { \"id\": 5001, \"volume_ml\": 5, \"price\": 690, \"stock\": 42 },\n    { \"id\": 5002, \"volume_ml\": 10, \"price\": 1190, \"stock\": 18 },\n    { \"id\": 5003, \"volume_ml\": 30, \"price\": 2890, \"stock\": 6 }\n  ],\n  \"created_at\": \"2026-03-02T08:11:00Z\",\n  \"updated_at\": \"2026-05-09T14:32:55Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products/999999",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products", "999999"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"PRODUCT_NOT_FOUND\",\n    \"message\": \"Товар с id=999999 не найден\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/catalog/products/1001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "catalog", "products", "1001"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lost Cherry\",\n  \"description\": \"Обновлённое описание: сладкая чёрная вишня, миндаль, тонкинский боб, сандаловое дерево.\",\n  \"is_hit\": true,\n  \"discount_percent\": 15,\n  \"variants\": [\n    { \"id\": 5001, \"volume_ml\": 5, \"price\": 690, \"stock\": 50 },\n    { \"id\": 5002, \"volume_ml\": 10, \"price\": 1190, \"stock\": 20 },\n    { \"volume_ml\": 50, \"price\": 4490, \"stock\": 5 },\n    { \"id\": 5003, \"_delete\": true }\n  ]\n}"
+            },
+            "description": "Обновляет товар целиком. variants: элемент с id и без _delete — обновить; элемент без id — создать; элемент с id и _delete=true — удалить (если на него нет ссылок из активных заказов)."
+          },
+          "response": [
+            {
+              "name": "200 OK — товар обновлён",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products/1001",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products", "1001"]
+                },
+                "body": { "mode": "raw", "raw": "{\"name\":\"Lost Cherry\"}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 1001,\n  \"slug\": \"tom-ford-lost-cherry\",\n  \"brand\": { \"id\": 1, \"name\": \"Tom Ford\" },\n  \"name\": \"Lost Cherry\",\n  \"gender\": \"unisex\",\n  \"country\": { \"id\": 2, \"name\": \"США\" },\n  \"description\": \"Обновлённое описание: сладкая чёрная вишня, миндаль, тонкинский боб, сандаловое дерево.\",\n  \"image_url\": \"https://cdn.komnata26.ru/products/tom-ford-lost-cherry.jpg\",\n  \"is_active\": true,\n  \"is_hit\": true,\n  \"discount_percent\": 15,\n  \"variants\": [\n    { \"id\": 5001, \"volume_ml\": 5, \"price\": 690, \"stock\": 50 },\n    { \"id\": 5002, \"volume_ml\": 10, \"price\": 1190, \"stock\": 20 },\n    { \"id\": 5050, \"volume_ml\": 50, \"price\": 4490, \"stock\": 5 }\n  ],\n  \"updated_at\": \"2026-05-11T11:02:08Z\"\n}"
+            },
+            {
+              "name": "409 Conflict — нельзя удалить вариант с активными заказами",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products/1001",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products", "1001"]
+                },
+                "body": { "mode": "raw", "raw": "{\"variants\":[{\"id\":5003,\"_delete\":true}]}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"VARIANT_IN_USE\",\n    \"message\": \"Вариант объёма используется в активных заказах и не может быть удалён. Деактивируйте товар или дождитесь завершения заказов.\",\n    \"fields\": {\n      \"variants\": \"Вариант id=5003 связан с 3 активными заказами\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Deactivate product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/catalog/products/1001/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "catalog", "products", "1001", "deactivate"]
+            },
+            "description": "Помечает товар как неактивный. Товар скрывается из публичного каталога, но остаётся в системе и в исторических заказах. Обратная операция — PATCH /activate (не описан здесь)."
+          },
+          "response": [
+            {
+              "name": "200 OK — товар деактивирован",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/products/1001/deactivate",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "products", "1001", "deactivate"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 1001,\n  \"is_active\": false,\n  \"deactivated_at\": \"2026-05-11T11:15:42Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create brand",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/catalog/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "catalog", "brands"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Byredo\",\n  \"country_id\": 1\n}"
+            },
+            "description": "Создаёт бренд. name уникален."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/brands",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "brands"]
+                },
+                "body": { "mode": "raw", "raw": "{\"name\":\"Byredo\",\"country_id\":1}" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"id\": 5,\n  \"name\": \"Byredo\",\n  \"country\": { \"id\": 1, \"name\": \"Франция\" },\n  \"products_count\": 0,\n  \"created_at\": \"2026-05-11T11:20:01Z\"\n}"
+            },
+            {
+              "name": "409 Conflict — бренд с таким именем уже есть",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token}}" },
+                  { "key": "Content-Type", "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/admin/catalog/brands",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "admin", "catalog", "brands"]
+                },
+                "body": { "mode": "raw", "raw": "{\"name\":\"Tom Ford\"}" }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }],
+              "body": "{\n  \"error\": {\n    \"code\": \"BRAND_ALREADY_EXISTS\",\n    \"message\": \"Бренд с таким названием уже существует\",\n    \"fields\": { \"name\": \"Tom Ford\" }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://api.komnata26.ru" },
+    { "key": "token", "value": "" }
+  ]
+}
