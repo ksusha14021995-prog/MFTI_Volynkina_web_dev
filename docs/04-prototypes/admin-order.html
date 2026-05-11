@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админка — заказ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: #111; background: #f5f5f5; font-size: 14px; line-height: 1.5; min-height: 100vh; }
+    a { color: inherit; }
+
+    .note { background: #fffbe6; border-bottom: 1px solid #e3d896; padding: 8px 16px; font-size: 12px; color: #6b5500; }
+    .note b { color: #463600; }
+
+    .admin-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .sidebar { background: #111; color: #fff; padding: 20px 0; }
+    .sidebar .brand { padding: 0 20px 20px; border-bottom: 1px solid #333; margin-bottom: 12px; }
+    .sidebar .brand .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 16px; margin-bottom: 2px; }
+    .sidebar .brand .sub { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
+    .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 12px 20px; text-decoration: none; color: #ccc; font-size: 14px; border-left: 3px solid transparent; }
+    .sidebar nav a.active { background: #1f1f1f; color: #fff; border-left-color: #fff; font-weight: 600; }
+    .sidebar nav a:hover { background: #1a1a1a; color: #fff; }
+    .sidebar nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .sidebar .logout { margin-top: 20px; padding-top: 16px; border-top: 1px solid #333; }
+
+    .main { padding: 24px 32px; min-width: 0; }
+    .back-link { color: #777; text-decoration: none; font-size: 13px; display: inline-block; margin-bottom: 8px; }
+    .back-link:hover { color: #111; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .topbar-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .topbar h1 { font-size: 22px; font-weight: 600; margin: 0; }
+    .topbar-meta { color: #777; font-size: 13px; }
+    .topbar-actions { display: flex; gap: 8px; }
+
+    .status {
+      font-size: 11px;
+      padding: 5px 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .status.new { background: #f0f0f0; color: #555; }
+    .status.confirmed { background: #e8f1ff; color: #1e5bb8; }
+
+    .btn { padding: 10px 18px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; border: 1px solid #111; background: #fff; color: #111; text-decoration: none; display: inline-block; }
+    .btn.primary { background: #111; color: #fff; }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn:not(.primary):hover { background: #fafafa; }
+    .btn.danger { border-color: #d63838; color: #d63838; }
+    .btn.danger:hover { background: #d63838; color: #fff; }
+    .btn.sm { padding: 6px 12px; font-size: 12px; }
+
+    /* layout */
+    .order-grid { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+
+    .card { background: #fff; border: 1px solid #ddd; padding: 24px; margin-bottom: 16px; }
+    .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 16px; font-weight: 600; color: #555; }
+
+    /* status changer */
+    .status-changer {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .status-changer .label { font-size: 13px; color: #777; }
+    .status-changer select {
+      border: 1px solid #ccc;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+      flex: 1;
+      min-width: 180px;
+    }
+    .status-changer select:focus { border-color: #111; }
+
+    /* items */
+    .item {
+      display: grid;
+      grid-template-columns: 60px 1fr auto auto;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+    .item:last-of-type { border-bottom: none; }
+    .item .img {
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .item .img svg { width: 60%; height: 60%; opacity: 0.4; }
+    .item .b { color: #777; font-size: 11px; text-transform: uppercase; }
+    .item .n { font-size: 14px; font-weight: 500; }
+    .item .v { font-size: 12px; color: #555; }
+    .item .price-info { text-align: right; font-size: 13px; }
+    .item .qty { color: #777; font-size: 12px; }
+    .item .price { font-weight: 600; }
+    .remove-item {
+      background: none;
+      border: 1px solid #f0c4c4;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      color: #d63838;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .remove-item:hover { background: #d63838; color: #fff; }
+
+    .totals { padding-top: 12px; border-top: 1px solid #eee; margin-top: 12px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+    .totals-row.muted { color: #777; }
+    .totals-row.total {
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 1px solid #eee;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* customer / pickup */
+    .row-info { display: flex; gap: 10px; font-size: 13px; padding: 4px 0; }
+    .row-info .lbl { color: #777; min-width: 80px; }
+    .pickup-select {
+      width: 100%;
+      border: 1px solid #ccc;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+    .pickup-select:focus { border-color: #111; }
+    .pickup-current {
+      margin-top: 10px;
+      padding: 12px;
+      background: #fafafa;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* timeline */
+    .timeline-log { list-style: none; padding: 0; margin: 0; }
+    .timeline-log li { padding: 8px 0; font-size: 13px; border-bottom: 1px solid #eee; }
+    .timeline-log li:last-child { border-bottom: none; }
+    .timeline-log .when { color: #777; font-size: 12px; }
+    .timeline-log .who { color: #777; }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    @media (max-width: 1000px) {
+      .order-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .admin-shell { grid-template-columns: 1fr; }
+      .sidebar { padding: 0; display: flex; overflow-x: auto; }
+      .sidebar .brand { display: none; }
+      .sidebar nav { display: flex; flex: 1; }
+      .sidebar nav a { padding: 10px 14px; border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+      .sidebar nav a.active { border-left: none; border-bottom-color: #fff; }
+      .sidebar .logout { display: none; }
+      .main { padding: 16px; }
+      .topbar h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> карточка заказа в админке. Смена статуса, удаление позиций, смена точки самовывоза, история действий.
+  </div>
+
+  <div class="admin-shell">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">КОМНАТА 26</div>
+        <div class="sub">Админка</div>
+      </div>
+      <nav>
+        <a href="admin-products.html">
+          <svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5v8l-9 5-9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+          Товары
+        </a>
+        <a href="admin-orders.html" class="active">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+          Заказы
+        </a>
+        <a href="admin-login.html" class="logout">
+          <svg viewBox="0 0 24 24"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
+          Выйти
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main">
+
+      <a href="admin-orders.html" class="back-link">← Все заказы</a>
+
+      <div class="topbar">
+        <div class="topbar-left">
+          <h1>Заказ № 26-001847</h1>
+          <span class="topbar-meta">11.05.2026 14:32</span>
+          <span class="status new">Новый</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn">Отмена</button>
+          <button class="btn primary">Сохранить изменения</button>
+        </div>
+      </div>
+
+      <div class="order-grid">
+
+        <section>
+
+          <div class="card">
+            <h2>Изменить статус</h2>
+            <div class="status-changer">
+              <span class="label">Текущий: <strong>Новый</strong> →</span>
+              <select>
+                <option>Подтверждён</option>
+                <option>Готов к выдаче</option>
+                <option>Выдан</option>
+                <option>Отменён</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Состав заказа</h2>
+
+            <div class="item">
+              <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+              <div>
+                <div class="b">Tom Ford</div>
+                <div class="n">Lost Cherry</div>
+                <div class="v">10 мл</div>
+              </div>
+              <div class="price-info">
+                <div class="qty">1 шт. × 1 790 ₽</div>
+                <div class="price">1 790 ₽</div>
+              </div>
+              <button class="remove-item" title="Удалить позицию">×</button>
+            </div>
+
+            <div class="item">
+              <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+              <div>
+                <div class="b">Chanel</div>
+                <div class="n">№5 Eau de Parfum</div>
+                <div class="v">5 мл</div>
+              </div>
+              <div class="price-info">
+                <div class="qty">2 шт. × 790 ₽</div>
+                <div class="price">1 580 ₽</div>
+              </div>
+              <button class="remove-item" title="Удалить позицию">×</button>
+            </div>
+
+            <div class="item">
+              <div class="img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+              <div>
+                <div class="b">Maison Francis Kurkdjian</div>
+                <div class="n">Baccarat Rouge 540</div>
+                <div class="v">5 мл</div>
+              </div>
+              <div class="price-info">
+                <div class="qty">1 шт. × 1 210 ₽</div>
+                <div class="price">1 210 ₽</div>
+              </div>
+              <button class="remove-item" title="Удалить позицию">×</button>
+            </div>
+
+            <div class="totals">
+              <div class="totals-row"><span>Товары, 4 шт.</span><span>4 580 ₽</span></div>
+              <div class="totals-row muted"><span>Самовывоз</span><span>бесплатно</span></div>
+              <div class="totals-row total"><span>К оплате при получении</span><span>4 580 ₽</span></div>
+            </div>
+          </div>
+
+        </section>
+
+        <aside>
+
+          <div class="card">
+            <h2>Покупатель</h2>
+            <div class="row-info"><span class="lbl">Имя</span><span>Ксения Полуянова</span></div>
+            <div class="row-info"><span class="lbl">Email</span><span>ksenia@example.com</span></div>
+            <div class="row-info"><span class="lbl">Телефон</span><span>+7 (999) 123-45-67</span></div>
+            <div class="row-info"><span class="lbl">Аккаунт</span><span>Зарегистрирован</span></div>
+          </div>
+
+          <div class="card">
+            <h2>Точка самовывоза</h2>
+            <select class="pickup-select">
+              <option>На Тверской</option>
+              <option>В Хамовниках</option>
+              <option>В БЦ «Око»</option>
+            </select>
+            <div class="pickup-current">
+              Москва, ул. Тверская, 22, 1-й этаж<br>
+              Пн–Пт 11:00–21:00, Сб–Вс 12:00–20:00
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>История</h2>
+            <ul class="timeline-log">
+              <li>
+                <div><strong>Создан заказ</strong></div>
+                <div class="when">11.05.2026 14:32 · <span class="who">покупатель</span></div>
+              </li>
+            </ul>
+          </div>
+
+        </aside>
+
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn">Отмена</button>
+        <button class="btn primary">Сохранить изменения</button>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+</html>

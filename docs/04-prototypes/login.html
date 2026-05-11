@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: #111; background: #fff; font-size: 14px; line-height: 1.5; }
+    a { color: inherit; }
+
+    .note { background: #fffbe6; border-bottom: 1px solid #e3d896; padding: 8px 16px; font-size: 12px; color: #6b5500; }
+    .note b { color: #463600; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    header { border-bottom: 1px solid #111; background: #fff; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; gap: 16px; }
+    .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 18px; }
+    .header-back { color: #777; text-decoration: none; font-size: 13px; }
+
+    main { padding: 48px 0 80px; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+    .step-card {
+      border: 1px solid #eee;
+      padding: 36px 32px;
+      background: #fff;
+    }
+    .step-num {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      border-radius: 50%;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .step-card h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+    .step-card p {
+      color: #777;
+      font-size: 14px;
+      margin: 0 0 24px;
+    }
+    .field { display: flex; flex-direction: column; margin-bottom: 16px; }
+    .field label { font-size: 13px; color: #777; margin-bottom: 6px; }
+    .field input {
+      border: 1px solid #ccc;
+      padding: 14px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .field input:focus { border-color: #111; }
+    .field.error input { border-color: #d63838; }
+    .field-error { color: #d63838; font-size: 12px; margin-top: 6px; }
+    .btn-primary {
+      display: block;
+      width: 100%;
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 14px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .step-foot {
+      font-size: 12px;
+      color: #777;
+      text-align: center;
+      margin-top: 14px;
+    }
+    .resend-link { color: #111; cursor: pointer; }
+    .resend-link:hover { text-decoration: underline; }
+
+    .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-size: 24px;
+      grid-column: 1 / -1;
+      display: none;
+    }
+
+    .legal {
+      text-align: center;
+      color: #777;
+      font-size: 12px;
+      margin-top: 28px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (max-width: 900px) {
+      .shell { padding: 0 12px; }
+      .header-row { gap: 8px; padding: 12px 0; }
+      .logo { font-size: 15px; letter-spacing: 0.1em; }
+      main { padding: 24px 0 40px; }
+      .flow { grid-template-columns: 1fr; gap: 16px; }
+      .step-card { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> вход / регистрация по одноразовому коду. Два состояния показаны рядом — это шаги одного flow.
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">КОМНАТА 26</div>
+        <a href="catalog.html" class="header-back">← В каталог</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="flow">
+
+      <div class="step-card">
+        <span class="step-num">1</span>
+        <h2>Вход</h2>
+        <p>Введите email или телефон — мы пришлём одноразовый код.</p>
+
+        <div class="field">
+          <label>Email или телефон</label>
+          <input type="text" placeholder="email@example.com или +7 ___ ___ __ __">
+        </div>
+
+        <button class="btn-primary">Получить код</button>
+
+        <div class="step-foot">Регистрация не нужна — если вас ещё нет в системе, мы создадим аккаунт автоматически.</div>
+      </div>
+
+      <div class="step-card">
+        <span class="step-num">2</span>
+        <h2>Код подтверждения</h2>
+        <p>Мы отправили код на <strong>ksenia@example.com</strong>.</p>
+
+        <div class="field error">
+          <label>Код из 6 цифр</label>
+          <input type="text" value="123456" placeholder="● ● ● ● ● ●">
+          <div class="field-error">Код введён неверно. Повторите попытку.</div>
+        </div>
+
+        <button class="btn-primary">Войти</button>
+
+        <div class="step-foot">
+          Не пришёл код? <span class="resend-link">Отправить ещё раз</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="legal">Нажимая «Получить код», вы соглашаетесь с офертой и политикой обработки персональных данных.</p>
+  </main>
+
+</body>
+</html>

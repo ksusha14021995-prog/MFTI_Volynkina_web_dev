@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Прототипы — КОМНАТА 26</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+      color: #111;
+      background: #f5f5f5;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    a { color: inherit; }
+
+    .shell { max-width: 1100px; margin: 0 auto; padding: 40px 24px 60px; }
+
+    header { margin-bottom: 40px; }
+    .logo { font-weight: 700; letter-spacing: 0.2em; font-size: 22px; margin-bottom: 6px; }
+    .sub { font-size: 12px; letter-spacing: 0.15em; color: #777; text-transform: uppercase; }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin: 32px 0 8px;
+    }
+    .lead {
+      color: #555;
+      font-size: 15px;
+      margin: 0 0 32px;
+      max-width: 640px;
+    }
+
+    .group {
+      margin-bottom: 36px;
+    }
+    .group h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #777;
+      margin: 0 0 16px;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .card {
+      display: block;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: #111;
+      transition: border 0.1s;
+    }
+    .card:hover {
+      border-color: #111;
+    }
+    .card-num {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      color: #777;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .card-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      color: #777;
+      font-size: 13px;
+    }
+
+    footer {
+      margin-top: 50px;
+      padding-top: 24px;
+      border-top: 1px solid #ddd;
+      color: #777;
+      font-size: 12px;
+    }
+    footer a { color: #111; text-decoration: underline; }
+
+    @media (max-width: 800px) {
+      .shell { padding: 20px 12px 40px; }
+      h1 { font-size: 24px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="shell">
+
+    <header>
+      <div class="logo">КОМНАТА 26</div>
+      <div class="sub">Интернет-магазин парфюмерии на разлив</div>
+    </header>
+
+    <h1>Прототипы интерфейса</h1>
+    <p class="lead">ДЗ 1 курса «Веб-разработка» (МФТИ × Нетология). Схематические прототипы всех необходимых страниц: покупательская часть и админ-панель. Адаптивная вёрстка — открываются с десктопа и телефона.</p>
+
+    <div class="group">
+      <h2>Покупатель</h2>
+      <div class="grid">
+        <a href="catalog.html" class="card">
+          <div class="card-num">01</div>
+          <div class="card-name">Каталог</div>
+          <div class="card-desc">Шапка, категории, фильтры, плитка товаров</div>
+        </a>
+        <a href="product.html" class="card">
+          <div class="card-num">02</div>
+          <div class="card-name">Карточка товара</div>
+          <div class="card-desc">Изображение, объёмы, описание, в корзину</div>
+        </a>
+        <a href="cart.html" class="card">
+          <div class="card-num">03</div>
+          <div class="card-name">Корзина</div>
+          <div class="card-desc">Позиции, итог, переход к оформлению</div>
+        </a>
+        <a href="checkout.html" class="card">
+          <div class="card-num">04</div>
+          <div class="card-name">Оформление заказа</div>
+          <div class="card-desc">Контакты, точка самовывоза, оплата</div>
+        </a>
+        <a href="order-confirmed.html" class="card">
+          <div class="card-num">05</div>
+          <div class="card-name">Подтверждение заказа</div>
+          <div class="card-desc">Номер, состав, что дальше</div>
+        </a>
+        <a href="login.html" class="card">
+          <div class="card-num">06</div>
+          <div class="card-name">Вход / регистрация</div>
+          <div class="card-desc">Одноразовый код по email или телефону</div>
+        </a>
+        <a href="account-orders.html" class="card">
+          <div class="card-num">07</div>
+          <div class="card-name">ЛК: история заказов</div>
+          <div class="card-desc">Список заказов с фильтром</div>
+        </a>
+        <a href="account-order.html" class="card">
+          <div class="card-num">08</div>
+          <div class="card-name">ЛК: детали заказа</div>
+          <div class="card-desc">Таймлайн статусов, состав, отмена</div>
+        </a>
+        <a href="account-profile.html" class="card">
+          <div class="card-num">09</div>
+          <div class="card-name">ЛК: профиль</div>
+          <div class="card-desc">Редактирование контактных данных</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Админка</h2>
+      <div class="grid">
+        <a href="admin-login.html" class="card">
+          <div class="card-num">10</div>
+          <div class="card-name">Вход в админку</div>
+          <div class="card-desc">Email + пароль</div>
+        </a>
+        <a href="admin-products.html" class="card">
+          <div class="card-num">11</div>
+          <div class="card-name">Список товаров</div>
+          <div class="card-desc">Поиск, фильтр, таблица с вариантами</div>
+        </a>
+        <a href="admin-product-form.html" class="card">
+          <div class="card-num">12</div>
+          <div class="card-name">Карточка товара</div>
+          <div class="card-desc">Создание / редактирование, варианты объёмов</div>
+        </a>
+        <a href="admin-orders.html" class="card">
+          <div class="card-num">13</div>
+          <div class="card-name">Список заказов</div>
+          <div class="card-desc">Поиск, фильтр по статусу и дате</div>
+        </a>
+        <a href="admin-order.html" class="card">
+          <div class="card-num">14</div>
+          <div class="card-name">Карточка заказа</div>
+          <div class="card-desc">Смена статуса, удаление позиций, точка</div>
+        </a>
+      </div>
+    </div>
+
+    <footer>
+      Репозиторий проекта: <a href="https://github.com/ksusha14021995-prog/MFTI_Volynkina_web_dev">github.com/ksusha14021995-prog/MFTI_Volynkina_web_dev</a>
+    </footer>
+
+  </div>
+
+</body>
+</html>

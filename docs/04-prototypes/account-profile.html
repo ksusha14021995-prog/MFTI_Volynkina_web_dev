@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Профиль — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: #111; background: #fff; font-size: 14px; line-height: 1.5; }
+    a { color: inherit; }
+
+    .note { background: #fffbe6; border-bottom: 1px solid #e3d896; padding: 8px 16px; font-size: 12px; color: #6b5500; }
+    .note b { color: #463600; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    header { border-bottom: 1px solid #111; background: #fff; position: sticky; top: 0; z-index: 10; }
+    .header-row { display: flex; align-items: center; gap: 24px; padding: 16px 0; }
+    .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 18px; flex-shrink: 0; }
+    .search { flex: 1; display: flex; max-width: 600px; }
+    .search input { flex: 1; border: 1px solid #111; border-right: none; padding: 9px 12px; font-size: 14px; font-family: inherit; outline: none; background: #fff; }
+    .search button { border: 1px solid #111; background: #111; color: #fff; padding: 9px 18px; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .icons { display: flex; gap: 18px; align-items: center; flex-shrink: 0; }
+    .icon-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+    .icon-btn svg { width: 22px; height: 22px; stroke: #111; fill: none; stroke-width: 1.5; }
+    .cart-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; background: #111; color: #fff; border-radius: 10px; font-size: 11px; margin-left: -2px; }
+
+    main { padding: 32px 0 60px; }
+    .page-title { font-size: 28px; font-weight: 600; margin: 0 0 24px; }
+
+    .account-layout { display: grid; grid-template-columns: 240px 1fr; gap: 40px; align-items: start; }
+    .side-nav { border: 1px solid #eee; padding: 8px 0; }
+    .side-nav a { display: block; padding: 12px 20px; text-decoration: none; color: #111; font-size: 14px; border-left: 3px solid transparent; }
+    .side-nav a.active { background: #fafafa; border-left-color: #111; font-weight: 600; }
+    .side-nav a:hover { background: #f5f5f5; }
+    .side-nav .sep { height: 1px; background: #eee; margin: 8px 0; }
+    .side-nav .logout { color: #777; font-size: 13px; }
+
+    .profile-block {
+      border: 1px solid #eee;
+      padding: 32px;
+      max-width: 560px;
+    }
+    .profile-block h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 24px;
+      font-weight: 600;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .field { display: flex; flex-direction: column; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 13px; color: #777; margin-bottom: 6px; }
+    .field input {
+      border: 1px solid #ccc;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .field input:focus { border-color: #111; }
+    .field-hint { color: #777; font-size: 12px; margin-top: 4px; }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 12px 22px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #111;
+      background: #fff;
+      color: #111;
+    }
+    .btn.primary { background: #111; color: #fff; }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn:not(.primary):hover { background: #fafafa; }
+
+    @media (max-width: 900px) {
+      .shell { padding: 0 12px; }
+      .header-row { gap: 12px; padding: 12px 0; }
+      .logo { font-size: 15px; letter-spacing: 0.1em; }
+      .search input, .search button { padding: 8px 10px; font-size: 13px; }
+      .icons { gap: 12px; }
+      .icon-btn span { display: none; }
+      main { padding: 16px 0 40px; }
+      .page-title { font-size: 22px; }
+      .account-layout { grid-template-columns: 1fr; gap: 16px; }
+      .side-nav { display: flex; overflow-x: auto; padding: 0; }
+      .side-nav a { border-left: none; border-bottom: 3px solid transparent; padding: 10px 14px; white-space: nowrap; }
+      .side-nav a.active { background: #fafafa; border-bottom-color: #111; border-left: none; }
+      .side-nav .sep { display: none; }
+      .profile-block { padding: 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> личный кабинет — профиль покупателя. Редактирование имени, email и телефона.
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">КОМНАТА 26</div>
+        <div class="search">
+          <input type="text" placeholder="Найти аромат или бренд…">
+          <button>Найти</button>
+        </div>
+        <div class="icons">
+          <span class="icon-btn" title="Корзина">
+            <svg viewBox="0 0 24 24"><path d="M3 6h2l2.5 11h11L21 9H7"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
+            <span class="cart-badge">3</span>
+          </span>
+          <span class="icon-btn" title="Личный кабинет">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            <span>Ксения</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <h1 class="page-title">Личный кабинет</h1>
+
+    <div class="account-layout">
+
+      <nav class="side-nav">
+        <a href="account-orders.html">Мои заказы</a>
+        <a href="account-profile.html" class="active">Профиль</a>
+        <div class="sep"></div>
+        <a href="login.html" class="logout">Выйти</a>
+      </nav>
+
+      <div class="profile-block">
+        <h2>Контактные данные</h2>
+
+        <div class="form-grid">
+          <div class="field full">
+            <label>Имя</label>
+            <input type="text" value="Ксения">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" value="ksenia@example.com">
+            <span class="field-hint">Используется для входа</span>
+          </div>
+          <div class="field">
+            <label>Телефон</label>
+            <input type="tel" value="+7 (999) 123-45-67">
+            <span class="field-hint">Используется для входа</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary">Сохранить</button>
+          <button class="btn">Отмена</button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

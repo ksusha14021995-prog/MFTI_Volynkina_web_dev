@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админка — карточка товара</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: #111; background: #f5f5f5; font-size: 14px; line-height: 1.5; min-height: 100vh; }
+    a { color: inherit; }
+
+    .note { background: #fffbe6; border-bottom: 1px solid #e3d896; padding: 8px 16px; font-size: 12px; color: #6b5500; }
+    .note b { color: #463600; }
+
+    .admin-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .sidebar { background: #111; color: #fff; padding: 20px 0; }
+    .sidebar .brand { padding: 0 20px 20px; border-bottom: 1px solid #333; margin-bottom: 12px; }
+    .sidebar .brand .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 16px; margin-bottom: 2px; }
+    .sidebar .brand .sub { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; }
+    .sidebar nav a { display: flex; align-items: center; gap: 10px; padding: 12px 20px; text-decoration: none; color: #ccc; font-size: 14px; border-left: 3px solid transparent; }
+    .sidebar nav a.active { background: #1f1f1f; color: #fff; border-left-color: #fff; font-weight: 600; }
+    .sidebar nav a:hover { background: #1a1a1a; color: #fff; }
+    .sidebar nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .sidebar .logout { margin-top: 20px; padding-top: 16px; border-top: 1px solid #333; }
+
+    .main { padding: 24px 32px; min-width: 0; }
+    .back-link { color: #777; text-decoration: none; font-size: 13px; display: inline-block; margin-bottom: 8px; }
+    .back-link:hover { color: #111; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+    .topbar h1 { font-size: 24px; font-weight: 600; margin: 0; }
+    .topbar-actions { display: flex; gap: 8px; }
+
+    .btn { padding: 10px 18px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; border: 1px solid #111; background: #fff; color: #111; text-decoration: none; display: inline-block; }
+    .btn.primary { background: #111; color: #fff; }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn:not(.primary):hover { background: #fafafa; }
+    .btn.danger { border-color: #d63838; color: #d63838; }
+    .btn.danger:hover { background: #d63838; color: #fff; }
+
+    /* form layout */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      align-items: start;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 16px;
+      font-weight: 600;
+      color: #555;
+    }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .row.cols-1 { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; }
+    .field label { font-size: 13px; color: #777; margin-bottom: 6px; }
+    .field input, .field select, .field textarea {
+      border: 1px solid #ccc;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+    .field textarea { resize: vertical; min-height: 100px; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #111; }
+    .help { font-size: 12px; color: #777; margin-top: 4px; }
+
+    /* radio group for gender */
+    .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .radio-pill {
+      padding: 9px 16px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .radio-pill.selected { background: #111; color: #fff; border-color: #111; }
+    .radio-pill input { display: none; }
+
+    /* image upload */
+    .image-upload {
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 2px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #777;
+      font-size: 13px;
+      cursor: pointer;
+      max-width: 240px;
+    }
+    .image-upload svg { width: 40px; height: 40px; stroke: #aaa; fill: none; stroke-width: 1.5; margin-bottom: 8px; }
+
+    /* variants table */
+    .variants-table { width: 100%; border-collapse: collapse; }
+    .variants-table th, .variants-table td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+    }
+    .variants-table th {
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #555;
+      background: #fafafa;
+    }
+    .variants-table input {
+      width: 100%;
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+    }
+    .variants-table input:focus { border-color: #111; }
+    .remove-row {
+      background: none;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+    }
+    .remove-row:hover { color: #d63838; }
+    .add-variant {
+      background: none;
+      border: 1px dashed #ccc;
+      padding: 10px;
+      width: 100%;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: inherit;
+    }
+    .add-variant:hover { border-color: #111; color: #111; }
+
+    /* badges section */
+    .badges-line { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .checkbox-row { display: flex; align-items: center; gap: 6px; }
+    .checkbox-row input { accent-color: #111; }
+    .discount-input { width: 80px; }
+
+    /* toggle */
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .toggle .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background: #ccc;
+      border-radius: 11px;
+      transition: background 0.2s;
+    }
+    .toggle .switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      transition: left 0.2s;
+    }
+    .toggle input { display: none; }
+    .toggle input:checked + .switch { background: #111; }
+    .toggle input:checked + .switch::after { left: 20px; }
+
+    .footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    @media (max-width: 1000px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .admin-shell { grid-template-columns: 1fr; }
+      .sidebar { padding: 0; display: flex; overflow-x: auto; }
+      .sidebar .brand { display: none; }
+      .sidebar nav { display: flex; flex: 1; }
+      .sidebar nav a { padding: 10px 14px; border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+      .sidebar nav a.active { border-left: none; border-bottom-color: #fff; }
+      .sidebar .logout { display: none; }
+      .main { padding: 16px; }
+      .topbar h1 { font-size: 18px; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> карточка товара в админке — создание / редактирование. Основные поля, варианты объёмов с ценами и остатками, бейджи, переключатель активности.
+  </div>
+
+  <div class="admin-shell">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">КОМНАТА 26</div>
+        <div class="sub">Админка</div>
+      </div>
+      <nav>
+        <a href="admin-products.html" class="active">
+          <svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5v8l-9 5-9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+          Товары
+        </a>
+        <a href="admin-orders.html">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+          Заказы
+        </a>
+        <a href="admin-login.html" class="logout">
+          <svg viewBox="0 0 24 24"><path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
+          Выйти
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main">
+
+      <a href="admin-products.html" class="back-link">← Все товары</a>
+      <div class="topbar">
+        <h1>Редактирование: Tom Ford — Lost Cherry</h1>
+        <div class="topbar-actions">
+          <button class="btn">Отмена</button>
+          <button class="btn primary">Сохранить</button>
+        </div>
+      </div>
+
+      <div class="form-grid">
+
+        <section>
+
+          <div class="card">
+            <h2>Основная информация</h2>
+            <div class="row">
+              <div class="field">
+                <label>Бренд</label>
+                <select>
+                  <option>Tom Ford</option>
+                  <option>Chanel</option>
+                  <option>Dior</option>
+                  <option>+ Добавить бренд</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Страна</label>
+                <select>
+                  <option>США</option>
+                  <option>Франция</option>
+                  <option>Италия</option>
+                </select>
+              </div>
+            </div>
+            <div class="row cols-1">
+              <div class="field">
+                <label>Название</label>
+                <input type="text" value="Lost Cherry">
+              </div>
+            </div>
+            <div class="row cols-1">
+              <div class="field">
+                <label>Категория</label>
+                <div class="radio-group">
+                  <label class="radio-pill"><input type="radio" name="gender"> Женские</label>
+                  <label class="radio-pill"><input type="radio" name="gender"> Мужские</label>
+                  <label class="radio-pill selected"><input type="radio" name="gender" checked> Унисекс</label>
+                </div>
+              </div>
+            </div>
+            <div class="row cols-1">
+              <div class="field">
+                <label>Описание аромата</label>
+                <textarea>Lost Cherry — гурманский унисекс-аромат от Tom Ford. Построен вокруг ноты сочной чёрной вишни, обволакивающей шлейфом ликёра и миндаля. Верхние ноты — спелая вишня, турецкая роза. Сердце — миндальный ликёр, жасмин самбак. База — сандал, тонка, перуанский бальзам.</textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Варианты объёмов</h2>
+            <table class="variants-table">
+              <thead>
+                <tr>
+                  <th>Объём</th>
+                  <th>Цена, ₽</th>
+                  <th>Остаток, шт.</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="text" value="5 мл"></td>
+                  <td><input type="number" value="990"></td>
+                  <td><input type="number" value="12"></td>
+                  <td><button class="remove-row" title="Удалить вариант">×</button></td>
+                </tr>
+                <tr>
+                  <td><input type="text" value="10 мл"></td>
+                  <td><input type="number" value="1790"></td>
+                  <td><input type="number" value="2"></td>
+                  <td><button class="remove-row" title="Удалить вариант">×</button></td>
+                </tr>
+                <tr>
+                  <td><input type="text" value="30 мл"></td>
+                  <td><input type="number" value="4490"></td>
+                  <td><input type="number" value="0"></td>
+                  <td><button class="remove-row" title="Удалить вариант">×</button></td>
+                </tr>
+              </tbody>
+            </table>
+            <button class="add-variant">+ Добавить вариант объёма</button>
+          </div>
+
+        </section>
+
+        <aside>
+
+          <div class="card">
+            <h2>Статус</h2>
+            <label class="toggle">
+              <input type="checkbox" checked>
+              <span class="switch"></span>
+              <span>Товар активен</span>
+            </label>
+            <p class="help">Неактивные товары скрываются из каталога покупателя, но остаются в исторических заказах.</p>
+          </div>
+
+          <div class="card">
+            <h2>Изображение</h2>
+            <div class="image-upload">
+              <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="8" cy="11" r="2"/><path d="M21 16l-5-5L5 22"/></svg>
+              Загрузить изображение<br>
+              <small>PNG или JPG, до 5 МБ</small>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Бейджи</h2>
+            <label class="checkbox-row">
+              <input type="checkbox" checked>
+              <span>Хит продаж</span>
+            </label>
+            <div style="height: 12px;"></div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="discount-cb">
+              <label for="discount-cb">Скидка</label>
+              <input type="number" class="discount-input" placeholder="0">
+              <span style="color: #777; font-size: 13px;">%</span>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn danger">Удалить товар</button>
+        <button class="btn">Отмена</button>
+        <button class="btn primary">Сохранить</button>
+      </div>
+
+    </main>
+  </div>
+
+</body>
+</html>

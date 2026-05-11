@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мои заказы — прототип</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif; color: #111; background: #fff; font-size: 14px; line-height: 1.5; }
+    a { color: inherit; }
+
+    .note { background: #fffbe6; border-bottom: 1px solid #e3d896; padding: 8px 16px; font-size: 12px; color: #6b5500; }
+    .note b { color: #463600; }
+
+    .shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+    /* header */
+    header { border-bottom: 1px solid #111; background: #fff; position: sticky; top: 0; z-index: 10; }
+    .header-row { display: flex; align-items: center; gap: 24px; padding: 16px 0; }
+    .logo { font-weight: 700; letter-spacing: 0.15em; font-size: 18px; flex-shrink: 0; }
+    .search { flex: 1; display: flex; max-width: 600px; }
+    .search input { flex: 1; border: 1px solid #111; border-right: none; padding: 9px 12px; font-size: 14px; font-family: inherit; outline: none; background: #fff; }
+    .search button { border: 1px solid #111; background: #111; color: #fff; padding: 9px 18px; font-size: 14px; font-family: inherit; cursor: pointer; }
+    .icons { display: flex; gap: 18px; align-items: center; flex-shrink: 0; }
+    .icon-btn { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+    .icon-btn svg { width: 22px; height: 22px; stroke: #111; fill: none; stroke-width: 1.5; }
+    .cart-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; background: #111; color: #fff; border-radius: 10px; font-size: 11px; margin-left: -2px; }
+
+    /* page */
+    main { padding: 32px 0 60px; }
+    .page-title { font-size: 28px; font-weight: 600; margin: 0 0 24px; }
+
+    /* layout */
+    .account-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* sidebar nav */
+    .side-nav {
+      border: 1px solid #eee;
+      padding: 8px 0;
+    }
+    .side-nav a {
+      display: block;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: #111;
+      font-size: 14px;
+      border-left: 3px solid transparent;
+    }
+    .side-nav a.active {
+      background: #fafafa;
+      border-left-color: #111;
+      font-weight: 600;
+    }
+    .side-nav a:hover { background: #f5f5f5; }
+    .side-nav .sep { height: 1px; background: #eee; margin: 8px 0; }
+    .side-nav .logout {
+      color: #777;
+      font-size: 13px;
+    }
+
+    /* filters bar */
+    .filters-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      padding: 8px 14px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+      background: #fff;
+    }
+    .filter-chip.active { background: #111; color: #fff; border-color: #111; }
+
+    /* order card */
+    .order-card {
+      border: 1px solid #eee;
+      margin-bottom: 16px;
+      background: #fff;
+    }
+    .order-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+      background: #fafafa;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .order-meta { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .order-num { font-weight: 600; font-size: 15px; }
+    .order-date { color: #777; font-size: 13px; }
+    .status {
+      font-size: 11px;
+      padding: 4px 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .status.new { background: #f0f0f0; color: #555; }
+    .status.confirmed { background: #e8f1ff; color: #1e5bb8; }
+    .status.ready { background: #fff4e0; color: #b86b1e; }
+    .status.completed { background: #e6f5e6; color: #2e7d32; }
+    .status.cancelled { background: #ffe8e8; color: #b81e1e; }
+    .order-total { font-size: 16px; font-weight: 600; }
+
+    .order-body {
+      padding: 14px 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .mini-img {
+      width: 44px;
+      aspect-ratio: 4 / 5;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .mini-img svg { width: 60%; height: 60%; opacity: 0.4; }
+    .order-summary {
+      flex: 1;
+      min-width: 200px;
+      font-size: 13px;
+      color: #555;
+    }
+    .order-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-link {
+      background: none;
+      border: 1px solid #ddd;
+      color: #111;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-link:hover { border-color: #111; }
+    .btn-link.danger { color: #d63838; border-color: #f0c4c4; }
+    .btn-link.danger:hover { border-color: #d63838; }
+
+    @media (max-width: 900px) {
+      .shell { padding: 0 12px; }
+      .header-row { gap: 12px; padding: 12px 0; }
+      .logo { font-size: 15px; letter-spacing: 0.1em; }
+      .search input, .search button { padding: 8px 10px; font-size: 13px; }
+      .icons { gap: 12px; }
+      .icon-btn span { display: none; }
+      main { padding: 16px 0 40px; }
+      .page-title { font-size: 22px; }
+      .account-layout { grid-template-columns: 1fr; gap: 16px; }
+      .side-nav { display: flex; overflow-x: auto; padding: 0; }
+      .side-nav a { border-left: none; border-bottom: 3px solid transparent; padding: 10px 14px; white-space: nowrap; }
+      .side-nav a.active { background: #fafafa; border-bottom-color: #111; border-left: none; }
+      .side-nav .sep { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="note">
+    <b>Прототип:</b> личный кабинет — история заказов. Слева навигация по разделам ЛК, справа — список заказов с фильтром по статусу.
+  </div>
+
+  <header>
+    <div class="shell">
+      <div class="header-row">
+        <div class="logo">КОМНАТА 26</div>
+        <div class="search">
+          <input type="text" placeholder="Найти аромат или бренд…">
+          <button>Найти</button>
+        </div>
+        <div class="icons">
+          <span class="icon-btn" title="Корзина">
+            <svg viewBox="0 0 24 24"><path d="M3 6h2l2.5 11h11L21 9H7"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
+            <span class="cart-badge">3</span>
+          </span>
+          <span class="icon-btn" title="Личный кабинет">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            <span>Ксения</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+
+    <h1 class="page-title">Личный кабинет</h1>
+
+    <div class="account-layout">
+
+      <nav class="side-nav">
+        <a href="account-orders.html" class="active">Мои заказы</a>
+        <a href="account-profile.html">Профиль</a>
+        <div class="sep"></div>
+        <a href="login.html" class="logout">Выйти</a>
+      </nav>
+
+      <section>
+
+        <div class="filters-bar">
+          <div class="filter-chip active">Все</div>
+          <div class="filter-chip">Новый</div>
+          <div class="filter-chip">Подтверждён</div>
+          <div class="filter-chip">Готов к выдаче</div>
+          <div class="filter-chip">Выдан</div>
+          <div class="filter-chip">Отменён</div>
+        </div>
+
+        <article class="order-card">
+          <div class="order-head">
+            <div class="order-meta">
+              <span class="order-num">№ 26-001847</span>
+              <span class="order-date">11 мая 2026</span>
+              <span class="status new">Новый</span>
+            </div>
+            <div class="order-total">4 580 ₽</div>
+          </div>
+          <div class="order-body">
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="order-summary">Tom Ford Lost Cherry, Chanel №5, Maison Francis Kurkdjian Baccarat Rouge 540 · 4 шт.</div>
+            <div class="order-actions">
+              <a href="account-order.html" class="btn-link">Детали</a>
+              <button class="btn-link danger">Отменить</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="order-card">
+          <div class="order-head">
+            <div class="order-meta">
+              <span class="order-num">№ 26-001789</span>
+              <span class="order-date">29 апреля 2026</span>
+              <span class="status ready">Готов к выдаче</span>
+            </div>
+            <div class="order-total">2 380 ₽</div>
+          </div>
+          <div class="order-body">
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="order-summary">Creed Aventus, Dior Sauvage · 2 шт.</div>
+            <div class="order-actions">
+              <a href="account-order.html" class="btn-link">Детали</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="order-card">
+          <div class="order-head">
+            <div class="order-meta">
+              <span class="order-num">№ 26-001654</span>
+              <span class="order-date">15 апреля 2026</span>
+              <span class="status completed">Выдан</span>
+            </div>
+            <div class="order-total">1 790 ₽</div>
+          </div>
+          <div class="order-body">
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="order-summary">Tom Ford Lost Cherry · 1 шт.</div>
+            <div class="order-actions">
+              <a href="account-order.html" class="btn-link">Детали</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="order-card">
+          <div class="order-head">
+            <div class="order-meta">
+              <span class="order-num">№ 26-001512</span>
+              <span class="order-date">02 апреля 2026</span>
+              <span class="status cancelled">Отменён</span>
+            </div>
+            <div class="order-total">3 290 ₽</div>
+          </div>
+          <div class="order-body">
+            <div class="mini-img"><svg viewBox="0 0 64 96" fill="none" stroke="#666" stroke-width="2"><path d="M22 6h20v14h6v8H16v-8h6V6z"/><rect x="14" y="28" width="36" height="60" rx="3"/></svg></div>
+            <div class="order-summary">YSL Black Opium · 1 шт.</div>
+            <div class="order-actions">
+              <a href="account-order.html" class="btn-link">Детали</a>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+    </div>
+
+  </main>
+
+</body>
+</html>
