@@ -1,0 +1,43 @@
+.qty {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #111;
+}
+
+.qtySmall {
+  border-color: #ddd;
+  height: 36px;
+}
+
+.btn {
+  background: #fff;
+  border: none;
+  width: 44px;
+  font-size: 18px;
+  cursor: pointer;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnSmall {
+  width: 32px;
+  font-size: 16px;
+}
+
+.input {
+  width: 50px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  color: #111;
+}
+
+.inputSmall {
+  width: 38px;
+}

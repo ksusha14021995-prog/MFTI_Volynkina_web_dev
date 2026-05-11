@@ -1,0 +1,140 @@
+.header {
+  border-bottom: 1px solid #111;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.shell {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--padding-x);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.logo {
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  font-size: 18px;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: #111;
+}
+
+.search {
+  flex: 1;
+  display: flex;
+  max-width: 600px;
+}
+
+.searchInput {
+  flex: 1;
+  border: 1px solid #111;
+  border-right: none;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+}
+
+.searchBtn {
+  border: 1px solid #111;
+  background: #111;
+  color: #fff;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.icons {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: none;
+  color: #111;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.iconBtn svg {
+  width: 22px;
+  height: 22px;
+  stroke: #111;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.cartBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #111;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-left: -2px;
+}
+
+.cats {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid #ddd;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cats::-webkit-scrollbar { display: none; }
+
+.catLink {
+  padding: 12px 18px;
+  font-size: 14px;
+  color: #111;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.catLink:hover {
+  border-bottom-color: #999;
+}
+
+.catLinkActive {
+  border-bottom-color: #111 !important;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .headerRow { gap: 12px; padding: 12px 0; }
+  .logo { font-size: 15px; letter-spacing: 0.1em; }
+  .searchInput, .searchBtn { padding: 8px 10px; font-size: 13px; }
+  .icons { gap: 12px; }
+  .iconBtnLabel { display: none; }
+  .shell { padding: 0 12px; }
+}

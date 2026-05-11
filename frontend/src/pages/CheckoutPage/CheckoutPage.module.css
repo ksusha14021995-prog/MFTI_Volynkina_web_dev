@@ -1,0 +1,170 @@
+.shell {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--padding-x);
+}
+
+.main {
+  padding: 32px 0 60px;
+  flex: 1;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 32px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 40px;
+  align-items: start;
+}
+
+.section {
+  margin-bottom: 36px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 16px;
+  font-weight: 600;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #111;
+  color: #fff;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldFull {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 6px;
+}
+
+.field input {
+  border: 1px solid #ccc;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+}
+
+.field input:focus { border-color: #111; }
+
+.fieldError input {
+  border-color: #d63838;
+}
+
+.errorMsg {
+  color: #d63838;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* pickup */
+.pickupList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pickupOption {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+
+.pickupOption:hover { border-color: #888; }
+
+.pickupSelected {
+  border-color: #111;
+  background: #fafafa;
+}
+
+.pickupOption input {
+  margin-top: 3px;
+  accent-color: #111;
+  cursor: pointer;
+}
+
+.pickupInfo { flex: 1; }
+
+.pickupName {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pickupAddr {
+  color: #555;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.pickupHours {
+  color: #777;
+  font-size: 12px;
+}
+
+/* payment */
+.paymentInfo {
+  padding: 16px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-size: 14px;
+}
+
+.paymentInfo strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.paymentInfo p {
+  margin: 0;
+  color: #555;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .shell { padding: 0 12px; }
+  .main { padding: 16px 0 40px; }
+  .pageTitle { font-size: 22px; margin-bottom: 24px; }
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  .formGrid { grid-template-columns: 1fr; }
+}
