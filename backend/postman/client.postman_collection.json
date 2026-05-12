@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "КОМНАТА 26 — Client endpoints (local)",
+    "_postman_id": "c0ffee00-1234-4abc-8def-000000000001",
+    "description": "Клиентские эндпоинты catalog-service и orders-service. Запускать поверх docker compose up --build. Переменные catalog_url / orders_url / session_id выставлены на localhost. Сценарий: Каталог → Корзина → Оформление заказа → Просмотр → Отмена.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "catalog_url", "value": "http://localhost:8001", "type": "string" },
+    { "key": "orders_url",  "value": "http://localhost:8002", "type": "string" },
+    { "key": "session_id",  "value": "postman-session-1",    "type": "string" },
+    { "key": "order_number","value": "",                      "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0. Healthcheck",
+      "item": [
+        {
+          "name": "catalog /health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{catalog_url}}/health", "host": ["{{catalog_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "orders /health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{orders_url}}/health", "host": ["{{orders_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "orders → catalog (cross-service)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{orders_url}}/health/catalog", "host": ["{{orders_url}}"], "path": ["health","catalog"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Каталог",
+      "item": [
+        {
+          "name": "GET /api/catalog/brands",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{catalog_url}}/api/catalog/brands", "host": ["{{catalog_url}}"], "path": ["api","catalog","brands"] },
+            "description": "Список всех брендов с вложенной страной."
+          }
+        },
+        {
+          "name": "GET /api/catalog/countries",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{catalog_url}}/api/catalog/countries", "host": ["{{catalog_url}}"], "path": ["api","catalog","countries"] }
+          }
+        },
+        {
+          "name": "GET /api/catalog/products — все",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products?page=1&limit=20",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products"],
+              "query": [
+                { "key": "page",  "value": "1"  },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Листинг без фильтров. Ожидаем 15 товаров."
+          }
+        },
+        {
+          "name": "GET /api/catalog/products — фильтр brand Tom Ford",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products?brand_ids[]=1",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products"],
+              "query": [
+                { "key": "brand_ids[]", "value": "1", "description": "Tom Ford = id 1" }
+              ]
+            },
+            "description": "Фильтр по бренду (массив brand_ids[]). Ожидаем 3 товара Tom Ford."
+          }
+        },
+        {
+          "name": "GET /api/catalog/products — фильтр gender=male",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products?gender=male",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products"],
+              "query": [
+                { "key": "gender", "value": "male" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/catalog/products — только хиты",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products?is_hit=true",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products"],
+              "query": [
+                { "key": "is_hit", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/catalog/products — поиск по имени",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products?search=santal",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products"],
+              "query": [
+                { "key": "search", "value": "santal" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/catalog/products — фильтр цена + два бренда",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products?brand_ids[]=1&brand_ids[]=4&price_min=700&price_max=1500",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products"],
+              "query": [
+                { "key": "brand_ids[]", "value": "1", "description": "Tom Ford" },
+                { "key": "brand_ids[]", "value": "4", "description": "Creed" },
+                { "key": "price_min",   "value": "700"  },
+                { "key": "price_max",   "value": "1500" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/catalog/products/{slug} — карточка товара",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products/creed-aventus",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products","creed-aventus"]
+            },
+            "description": "Карточка с описанием и вариантами. Slug: creed-aventus."
+          }
+        },
+        {
+          "name": "GET /api/catalog/products/{slug} — 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/api/catalog/products/no-such-product",
+              "host": ["{{catalog_url}}"],
+              "path": ["api","catalog","products","no-such-product"]
+            },
+            "description": "Ожидаем 404."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Точки самовывоза",
+      "item": [
+        {
+          "name": "GET /api/pickup-points",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{orders_url}}/api/pickup-points", "host": ["{{orders_url}}"], "path": ["api","pickup-points"] },
+            "description": "Список активных точек самовывоза. Ожидаем 3 точки в Москве."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Корзина",
+      "item": [
+        {
+          "name": "GET /api/cart — получить пустую корзину",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Id", "value": "{{session_id}}" }],
+            "url": { "raw": "{{orders_url}}/api/cart", "host": ["{{orders_url}}"], "path": ["api","cart"] },
+            "description": "Создаёт корзину если нет. Обязателен заголовок X-Session-Id."
+          }
+        },
+        {
+          "name": "POST /api/cart/items — Tom Ford Black Orchid 10ml",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Session-Id",   "value": "{{session_id}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_variant_id\": 2,\n  \"quantity\": 2\n}"
+            },
+            "url": { "raw": "{{orders_url}}/api/cart/items", "host": ["{{orders_url}}"], "path": ["api","cart","items"] },
+            "description": "Вариант id=2: Tom Ford Black Orchid 10ml, 1400р. Добавляем 2 шт."
+          }
+        },
+        {
+          "name": "POST /api/cart/items — Creed Aventus 5ml",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Session-Id",   "value": "{{session_id}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_variant_id\": 22,\n  \"quantity\": 1\n}"
+            },
+            "url": { "raw": "{{orders_url}}/api/cart/items", "host": ["{{orders_url}}"], "path": ["api","cart","items"] },
+            "description": "Вариант id=22: Creed Aventus 5ml, 750р."
+          }
+        },
+        {
+          "name": "POST /api/cart/items — повторное добавление (мёрдж)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Session-Id",   "value": "{{session_id}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_variant_id\": 2,\n  \"quantity\": 1\n}"
+            },
+            "url": { "raw": "{{orders_url}}/api/cart/items", "host": ["{{orders_url}}"], "path": ["api","cart","items"] },
+            "description": "Тот же variant_id=2 — quantity должен увеличиться с 2 до 3."
+          }
+        },
+        {
+          "name": "GET /api/cart — проверить состав",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Id", "value": "{{session_id}}" }],
+            "url": { "raw": "{{orders_url}}/api/cart", "host": ["{{orders_url}}"], "path": ["api","cart"] },
+            "description": "Ожидаем 2 позиции: variant 2 qty=3, variant 22 qty=1."
+          }
+        },
+        {
+          "name": "PATCH /api/cart/items/{id} — изменить количество",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "X-Session-Id",  "value": "{{session_id}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{orders_url}}/api/cart/items/1",
+              "host": ["{{orders_url}}"],
+              "path": ["api","cart","items","1"]
+            },
+            "description": "Подставь реальный item_id из GET /api/cart. Меняем quantity variant 2 с 3 на 1."
+          }
+        },
+        {
+          "name": "DELETE /api/cart/items/{id} — удалить позицию",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "X-Session-Id", "value": "{{session_id}}" }],
+            "url": {
+              "raw": "{{orders_url}}/api/cart/items/999",
+              "host": ["{{orders_url}}"],
+              "path": ["api","cart","items","999"]
+            },
+            "description": "Замени 999 на реальный item_id. Ожидаем 204 No Content."
+          }
+        },
+        {
+          "name": "GET /api/cart — без X-Session-Id (ошибка 422)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{orders_url}}/api/cart", "host": ["{{orders_url}}"], "path": ["api","cart"] },
+            "description": "Без заголовка X-Session-Id ожидаем 422 Unprocessable Content."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Оформление заказа",
+      "item": [
+        {
+          "name": "POST /api/orders — checkout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var body = pm.response.json();",
+                  "  pm.collectionVariables.set('order_number', body.order_number);",
+                  "  console.log('Order created:', body.order_number);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Session-Id",  "value": "{{session_id}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_point_id\": 1,\n  \"contact_name\": \"Ksusha Test\",\n  \"contact_phone\": \"+79161234567\",\n  \"contact_email\": \"ksusha@test.ru\"\n}"
+            },
+            "url": { "raw": "{{orders_url}}/api/orders", "host": ["{{orders_url}}"], "path": ["api","orders"] },
+            "description": "Оформить заказ. Резервирует остатки в catalog. Ответ содержит order_number, снапшоты цен, итоговую сумму. Скрипт автоматически сохраняет order_number в переменную коллекции."
+          }
+        },
+        {
+          "name": "POST /api/orders — 422 пустая корзина",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Session-Id",  "value": "empty-cart-session" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickup_point_id\": 1,\n  \"contact_name\": \"Test\",\n  \"contact_phone\": \"+70000000000\",\n  \"contact_email\": \"test@test.ru\"\n}"
+            },
+            "url": { "raw": "{{orders_url}}/api/orders", "host": ["{{orders_url}}"], "path": ["api","orders"] },
+            "description": "Сессия без товаров в корзине. Ожидаем 422 'Cart is empty'."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. История заказов",
+      "item": [
+        {
+          "name": "GET /api/orders — история по сессии",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Id", "value": "{{session_id}}" }],
+            "url": { "raw": "{{orders_url}}/api/orders", "host": ["{{orders_url}}"], "path": ["api","orders"] },
+            "description": "История текущей сессии. Ожидаем список с созданным заказом."
+          }
+        },
+        {
+          "name": "GET /api/orders — по email",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Session-Id", "value": "{{session_id}}" }],
+            "url": {
+              "raw": "{{orders_url}}/api/orders?email=ksusha@test.ru",
+              "host": ["{{orders_url}}"],
+              "path": ["api","orders"],
+              "query": [{ "key": "email", "value": "ksusha@test.ru" }]
+            },
+            "description": "История по contact_email. Возвращает все заказы с этим email."
+          }
+        },
+        {
+          "name": "GET /api/orders/{order_number} — детали заказа",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{orders_url}}/api/orders/{{order_number}}",
+              "host": ["{{orders_url}}"],
+              "path": ["api","orders","{{order_number}}"]
+            },
+            "description": "Детали заказа: статус, точка самовывоза, позиции со снапшотами цен. Переменная order_number заполняется скриптом из шага checkout, либо вбей вручную."
+          }
+        },
+        {
+          "name": "GET /api/orders/{order_number} — 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{orders_url}}/api/orders/RM-00000000-000000",
+              "host": ["{{orders_url}}"],
+              "path": ["api","orders","RM-00000000-000000"]
+            },
+            "description": "Ожидаем 404."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Отмена заказа",
+      "item": [
+        {
+          "name": "POST /api/orders/{order_number}/cancel — отмена (assembly)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{orders_url}}/api/orders/{{order_number}}/cancel",
+              "host": ["{{orders_url}}"],
+              "path": ["api","orders","{{order_number}}","cancel"]
+            },
+            "description": "Отменить заказ в статусе 'assembly'. Освобождает остатки в catalog. Ожидаем 200 и статус cancelled."
+          }
+        },
+        {
+          "name": "POST /api/orders/{order_number}/cancel — повторная отмена (403)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{orders_url}}/api/orders/{{order_number}}/cancel",
+              "host": ["{{orders_url}}"],
+              "path": ["api","orders","{{order_number}}","cancel"]
+            },
+            "description": "Заказ уже отменён. Ожидаем 403 Forbidden."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Остатки (internal catalog)",
+      "item": [
+        {
+          "name": "GET /internal/variants/2 — до checkout",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/internal/variants/2",
+              "host": ["{{catalog_url}}"],
+              "path": ["internal","variants","2"]
+            },
+            "description": "Tom Ford Black Orchid 10ml. Проверяй stock_quantity до и после checkout/cancel чтобы видеть резерв и возврат."
+          }
+        },
+        {
+          "name": "GET /internal/variants/22 — Creed Aventus 5ml",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/internal/variants/22",
+              "host": ["{{catalog_url}}"],
+              "path": ["internal","variants","22"]
+            }
+          }
+        },
+        {
+          "name": "GET /internal/variants/999 — 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalog_url}}/internal/variants/999",
+              "host": ["{{catalog_url}}"],
+              "path": ["internal","variants","999"]
+            },
+            "description": "Несуществующий вариант. Ожидаем 404."
+          }
+        }
+      ]
+    }
+  ]
+}

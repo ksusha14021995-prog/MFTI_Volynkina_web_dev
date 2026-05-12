@@ -1,24 +1,16 @@
-from fastapi import Depends, FastAPI
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
 
-from app import crud, schemas
-from app.db import Base, engine, get_db
+from app.db import Base, engine
+from app.routers import internal, public
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="catalog-service", version="0.0.1")
+app = FastAPI(title="catalog-service", version="1.0.0")
+
+app.include_router(public.router)
+app.include_router(internal.router)
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "catalog-service"}
-
-
-@app.post("/items", response_model=schemas.ItemRead, status_code=201)
-def create_item(payload: schemas.ItemCreate, db: Session = Depends(get_db)):
-    return crud.create_item(db, payload)
-
-
-@app.get("/items", response_model=list[schemas.ItemRead])
-def list_items(db: Session = Depends(get_db)):
-    return crud.list_items(db)

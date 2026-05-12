@@ -7,8 +7,9 @@ services:
       POSTGRES_USER: ${CATALOG_POSTGRES_USER}
       POSTGRES_PASSWORD: ${CATALOG_POSTGRES_PASSWORD}
       POSTGRES_DB: ${CATALOG_POSTGRES_DB}
+      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
-      - "5433:5432"
+      - "5435:5432"
     volumes:
       - postgres_data_catalog:/var/lib/postgresql/data
     healthcheck:
@@ -39,6 +40,7 @@ services:
       POSTGRES_USER: ${ORDERS_POSTGRES_USER}
       POSTGRES_PASSWORD: ${ORDERS_POSTGRES_PASSWORD}
       POSTGRES_DB: ${ORDERS_POSTGRES_DB}
+      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
       - "5434:5432"
     volumes:

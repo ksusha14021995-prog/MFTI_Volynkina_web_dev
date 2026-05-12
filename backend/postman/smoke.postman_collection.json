@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "КОМНАТА 26 — backend smoke (этап 0 скелета)",
+    "description": "Smoke-проверка скелета catalog-service и orders-service до начала реализации ДЗ-2. Подтверждает: оба FastAPI отвечают, обе БД пишут/читают, межсервисный вызов orders → catalog проходит. Когда заменим заглушку `Item` на реальные модели по ТЗ — эти запросы перестанут работать и эта коллекция будет отброшена, см. финальные catalog.postman_collection.json / orders.postman_collection.json в docs/06-api/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "catalog_url",
+      "value": "http://localhost:8001",
+      "type": "string"
+    },
+    {
+      "key": "orders_url",
+      "value": "http://localhost:8002",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. catalog-service / health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{catalog_url}}/health",
+          "host": ["{{catalog_url}}"],
+          "path": ["health"]
+        },
+        "description": "Базовый healthcheck catalog-service. Ожидаем 200 и `{status: ok, service: catalog-service}`."
+      },
+      "response": []
+    },
+    {
+      "name": "2. orders-service / health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{orders_url}}/health",
+          "host": ["{{orders_url}}"],
+          "path": ["health"]
+        },
+        "description": "Базовый healthcheck orders-service. Ожидаем 200 и `{status: ok, service: orders-service}`."
+      },
+      "response": []
+    },
+    {
+      "name": "3. orders → catalog / health (межсервисный вызов)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{orders_url}}/health/catalog",
+          "host": ["{{orders_url}}"],
+          "path": ["health", "catalog"]
+        },
+        "description": "Проверка, что orders-service может достучаться до catalog-service по docker-compose-сети (`http://catalog-service:8000/health`). Ожидаем 200 и вложенный объект `catalog`."
+      },
+      "response": []
+    },
+    {
+      "name": "4. catalog / POST item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"smoke-catalog-item\"\n}"
+        },
+        "url": {
+          "raw": "{{catalog_url}}/items",
+          "host": ["{{catalog_url}}"],
+          "path": ["items"]
+        },
+        "description": "Запись в catalog_db. Подтверждает, что SQLAlchemy + psycopg2 подняли таблицу `items` в catalog-db и пишут. Ожидаем 201 и `{id, name}`."
+      },
+      "response": []
+    },
+    {
+      "name": "5. catalog / GET items",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{catalog_url}}/items",
+          "host": ["{{catalog_url}}"],
+          "path": ["items"]
+        },
+        "description": "Чтение из catalog_db. Ожидаем 200 и массив с записями, созданными в шаге 4."
+      },
+      "response": []
+    },
+    {
+      "name": "6. orders / POST item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"smoke-order-item\"\n}"
+        },
+        "url": {
+          "raw": "{{orders_url}}/items",
+          "host": ["{{orders_url}}"],
+          "path": ["items"]
+        },
+        "description": "Запись в orders_db (отдельный контейнер БД). Ожидаем 201."
+      },
+      "response": []
+    },
+    {
+      "name": "7. orders / GET items",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{orders_url}}/items",
+          "host": ["{{orders_url}}"],
+          "path": ["items"]
+        },
+        "description": "Чтение из orders_db. Ожидаем 200 и массив."
+      },
+      "response": []
+    }
+  ]
+}
