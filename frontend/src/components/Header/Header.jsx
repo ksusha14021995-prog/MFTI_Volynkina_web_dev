@@ -1,16 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
+import { useSelector } from 'react-redux';
 import styles from './Header.module.css';
 
 const CATEGORIES = [
   { label: 'Все', value: 'all' },
-  { label: 'Женские', value: 'women' },
-  { label: 'Мужские', value: 'men' },
+  { label: 'Женские', value: 'female' },
+  { label: 'Мужские', value: 'male' },
   { label: 'Унисекс', value: 'unisex' },
 ];
 
 export default function Header({ search = '', onSearchChange, activeCategory = 'all', onCategoryChange }) {
-  const { totalItems } = useCart();
+  const cartItems = useSelector((state) => state.cart.items);
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const navigate = useNavigate();
 
   function handleSearchSubmit(e) {

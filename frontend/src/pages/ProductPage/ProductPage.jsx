@@ -1,18 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import Header from '../../components/Header/Header';
 import VolumeSelector from '../../components/VolumeSelector/VolumeSelector';
 import QtySelector from '../../components/QtySelector/QtySelector';
-import { getProductById, getDiscountedPrice } from '../../data/products';
-import { useCart } from '../../context/CartContext';
+import { fetchProduct } from '../../store/actions/productsActions';
+import { addToCart } from '../../store/actions/cartActions';
+import { getProductImageUrl } from '../../utils/imageUrl';
 import styles from './ProductPage.module.css';
-
-const CATEGORY_LABELS = {
-  all: 'Все',
-  women: 'Женские',
-  men: 'Мужские',
-  unisex: 'Унисекс',
-};
 
 const BottleIcon = () => (
   <svg viewBox="0 0 64 96" fill="none" stroke="#666" strokeWidth="2">
@@ -21,21 +16,47 @@ const BottleIcon = () => (
   </svg>
 );
 
+const GENDER_LABELS = {
+  female: 'Женские',
+  male: 'Мужские',
+  unisex: 'Унисекс',
+};
+
 export default function ProductPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const dispatch = useDispatch();
+  const { currentProduct: product, productLoading, productError } = useSelector(
+    (state) => state.products
+  );
+
+  const [selectedVariantId, setSelectedVariantId] = useState(null);
+  const [qty, setQty] = useState(1);
   const [imgFailed, setImgFailed] = useState(false);
 
-  const product = getProductById(id);
+  useEffect(() => {
+    dispatch(fetchProduct(slug));
+  }, [dispatch, slug]);
 
-  const availableVariants = product?.variants.filter((v) => v.stock > 0) || [];
-  const defaultVariant = availableVariants[0] || product?.variants[0];
+  // Set default variant once product loads
+  useEffect(() => {
+    if (product) {
+      const available = product.variants.filter((v) => v.stock_quantity > 0);
+      const def = available[0] || product.variants[0];
+      setSelectedVariantId(def?.id || null);
+    }
+  }, [product]);
 
-  const [selectedVariantId, setSelectedVariantId] = useState(defaultVariant?.id || null);
-  const [qty, setQty] = useState(1);
+  if (productLoading) {
+    return (
+      <>
+        <Header />
+        <main className={`${styles.main} ${styles.shell}`}><p>Загрузка...</p></main>
+      </>
+    );
+  }
 
-  if (!product) {
+  if (productError || !product) {
     return (
       <>
         <Header />
@@ -49,18 +70,28 @@ export default function ProductPage() {
     );
   }
 
+  const brandName = product.brand?.name ?? '';
+  const countryName = product.brand?.country?.name ?? '';
+  const discountPct = product.discount_percent ?? 0;
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId);
-  const rawPrice = selectedVariant?.price || 0;
-  const finalPrice = getDiscountedPrice(rawPrice, product.discountPct);
-  const hasSale = product.discountPct > 0;
+  const rawPrice = selectedVariant ? Number(selectedVariant.price) : 0;
+  const finalPrice = discountPct > 0 ? Math.round(rawPrice * (1 - discountPct / 100)) : rawPrice;
+  const hasSale = discountPct > 0;
+  const isOutOfStock = selectedVariant ? selectedVariant.stock_quantity === 0 : true;
+  const genderLabel = GENDER_LABELS[product.gender] ?? product.gender ?? '';
+
+  // Adapt variants for VolumeSelector (expects .volume and .stock fields)
+  const adaptedVariants = product.variants.map((v) => ({
+    ...v,
+    volume: v.volume_ml,
+    stock: v.stock_quantity,
+  }));
 
   function handleAddToCart() {
-    if (!selectedVariant || selectedVariant.stock === 0) return;
-    addItem(product.id, selectedVariant.id, qty);
+    if (!selectedVariant || isOutOfStock) return;
+    dispatch(addToCart(selectedVariant.id, qty));
     navigate('/cart');
   }
-
-  const catLabel = CATEGORY_LABELS[product.category] || product.category;
 
   return (
     <>
@@ -70,27 +101,25 @@ export default function ProductPage() {
         <nav className={styles.breadcrumbs}>
           <Link to="/">← Каталог</Link>
           <span className={styles.sep}>/</span>
-          <Link to={`/?category=${product.category}`}>{catLabel}</Link>
-          <span className={styles.sep}>/</span>
-          <span>{product.brand} — {product.name}</span>
+          <span>{brandName} — {product.name}</span>
         </nav>
 
         <div className={styles.product}>
           <div className={styles.productImage}>
-            {product.badges.length > 0 && (
+            {(product.is_hit || hasSale) && (
               <div className={styles.imageBadges}>
-                {product.badges.includes('hit') && (
+                {product.is_hit && (
                   <span className={`${styles.badge} ${styles.badgeHit}`}>Хит продаж</span>
                 )}
-                {product.badges.includes('sale') && (
-                  <span className={`${styles.badge} ${styles.badgeSale}`}>Скидка −{product.discountPct}%</span>
+                {hasSale && (
+                  <span className={`${styles.badge} ${styles.badgeSale}`}>Скидка −{discountPct}%</span>
                 )}
               </div>
             )}
-            {product.image && !imgFailed ? (
+            {getProductImageUrl(product) && !imgFailed ? (
               <img
-                src={product.image}
-                alt={`${product.brand} ${product.name}`}
+                src={getProductImageUrl(product)}
+                alt={`${brandName} ${product.name}`}
                 className={styles.productImg}
                 onError={() => setImgFailed(true)}
               />
@@ -100,11 +129,11 @@ export default function ProductPage() {
           </div>
 
           <div>
-            <div className={styles.brand}>{product.brand}</div>
+            <div className={styles.brand}>{brandName}</div>
             <h1 className={styles.name}>{product.name}</h1>
 
             <VolumeSelector
-              variants={product.variants}
+              variants={adaptedVariants}
               selectedVariantId={selectedVariantId}
               onSelect={setSelectedVariantId}
             />
@@ -117,7 +146,7 @@ export default function ProductPage() {
                 <span className={styles.priceCurrent}>{finalPrice.toLocaleString('ru-RU')} ₽</span>
               </div>
               {hasSale && (
-                <div className={styles.priceSaleNote}>Скидка {product.discountPct}%</div>
+                <div className={styles.priceSaleNote}>Скидка {discountPct}%</div>
               )}
             </div>
 
@@ -130,7 +159,7 @@ export default function ProductPage() {
               <button
                 className={styles.btnCart}
                 onClick={handleAddToCart}
-                disabled={!selectedVariant || selectedVariant.stock === 0}
+                disabled={isOutOfStock}
               >
                 В корзину
               </button>
@@ -138,19 +167,31 @@ export default function ProductPage() {
 
             <dl className={styles.meta}>
               <dt className={styles.metaDt}>Бренд</dt>
-              <dd className={styles.metaDd}>{product.brand}</dd>
-              <dt className={styles.metaDt}>Страна</dt>
-              <dd className={styles.metaDd}>{product.country}</dd>
-              <dt className={styles.metaDt}>Категория</dt>
-              <dd className={styles.metaDd}>{catLabel}</dd>
+              <dd className={styles.metaDd}>{brandName}</dd>
+              {countryName && (
+                <>
+                  <dt className={styles.metaDt}>Страна</dt>
+                  <dd className={styles.metaDd}>{countryName}</dd>
+                </>
+              )}
+              {genderLabel && (
+                <>
+                  <dt className={styles.metaDt}>Категория</dt>
+                  <dd className={styles.metaDd}>{genderLabel}</dd>
+                </>
+              )}
             </dl>
 
-            <h2 className={styles.descTitle}>Описание аромата</h2>
-            <div className={styles.description}>
-              {product.description.split('\n\n').map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
-            </div>
+            {product.description && (
+              <>
+                <h2 className={styles.descTitle}>Описание аромата</h2>
+                <div className={styles.description}>
+                  {product.description.split('\n\n').map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>

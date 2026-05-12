@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 # --- Country ---
@@ -71,6 +71,13 @@ class ProductListItem(BaseModel):
     min_price: Optional[Decimal]
     max_price: Optional[Decimal]
     variants: list[VariantRead]
+    image_url: Optional[str] = None
+
+    @model_validator(mode="after")
+    def set_image_url(self) -> "ProductListItem":
+        if not self.image_url:
+            self.image_url = f"/static/images/{self.slug}.jpg"
+        return self
 
 
 class ProductListResponse(BaseModel):
@@ -106,6 +113,13 @@ class ProductDetail(BaseModel):
     updated_at: datetime
     brand: BrandWithCountry
     variants: list[VariantRead]
+    image_url: Optional[str] = None
+
+    @model_validator(mode="after")
+    def set_image_url(self) -> "ProductDetail":
+        if not self.image_url:
+            self.image_url = f"/static/images/{self.slug}.jpg"
+        return self
 
 
 # --- Product create/update ---

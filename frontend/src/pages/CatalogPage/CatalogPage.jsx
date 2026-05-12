@@ -1,60 +1,66 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Header from '../../components/Header/Header';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import { products } from '../../data/products';
+import { fetchProducts, fetchBrands, fetchCountries } from '../../store/actions/productsActions';
 import styles from './CatalogPage.module.css';
 
-const PAGE_SIZE = 9;
-
-const ALL_BRANDS = [...new Set(products.map((p) => p.brand))].sort();
-const ALL_COUNTRIES = [...new Set(products.map((p) => p.country))].sort();
+const PAGE_SIZE = 20;
 
 export default function CatalogPage() {
+  const dispatch = useDispatch();
+  const { items, total, loading, error, brands, countries } = useSelector((state) => state.products);
+
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('all');
-  const [brands, setBrands] = useState([]);
-  const [countries, setCountries] = useState([]);
-  const [priceFrom, setPriceFrom] = useState('');
-  const [priceTo, setPriceTo] = useState('');
+  const [gender, setGender] = useState('');
+  const [selectedBrandIds, setSelectedBrandIds] = useState([]);
+  const [selectedCountryIds, setSelectedCountryIds] = useState([]);
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  function toggleBrand(brand) {
-    setBrands((prev) =>
-      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+  const loadProducts = useCallback(() => {
+    dispatch(fetchProducts({
+      page,
+      limit: PAGE_SIZE,
+      search,
+      gender,
+      brand_ids: selectedBrandIds,
+      country_ids: selectedCountryIds,
+      price_min: priceMin,
+      price_max: priceMax,
+    }));
+  }, [dispatch, page, search, gender, selectedBrandIds, selectedCountryIds, priceMin, priceMax]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  useEffect(() => {
+    dispatch(fetchBrands());
+    dispatch(fetchCountries());
+  }, [dispatch]);
+
+  function toggleBrandId(id) {
+    setSelectedBrandIds((prev) =>
+      prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]
     );
     setPage(1);
   }
 
-  function toggleCountry(country) {
-    setCountries((prev) =>
-      prev.includes(country) ? prev.filter((c) => c !== country) : [...prev, country]
+  function toggleCountryId(id) {
+    setSelectedCountryIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
     setPage(1);
   }
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    const from = priceFrom ? Number(priceFrom) : 0;
-    const to = priceTo ? Number(priceTo) : Infinity;
-
-    return products.filter((p) => {
-      if (category !== 'all' && p.category !== category) return false;
-      if (brands.length && !brands.includes(p.brand)) return false;
-      if (countries.length && !countries.includes(p.country)) return false;
-      if (q && !p.name.toLowerCase().includes(q) && !p.brand.toLowerCase().includes(q)) return false;
-      const minP = Math.min(...p.variants.map((v) => v.price));
-      if (minP < from || minP > to) return false;
-      return true;
-    });
-  }, [search, category, brands, countries, priceFrom, priceTo]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function handleCategoryChange(val) {
-    setCategory(val);
+    // gender filter: 'all' → '', 'women'/'men'/'unisex' → pass as-is
+    setGender(val === 'all' ? '' : val);
     setPage(1);
   }
 
@@ -63,7 +69,7 @@ export default function CatalogPage() {
       <Header
         search={search}
         onSearchChange={(v) => { setSearch(v); setPage(1); }}
-        activeCategory={category}
+        activeCategory={gender || 'all'}
         onCategoryChange={handleCategoryChange}
       />
 
@@ -81,33 +87,37 @@ export default function CatalogPage() {
             <div className={filtersOpen ? styles.filtersBodyOpen : `${styles.filtersBody} ${styles.filtersBodyClosed}`}>
               <h2 className={styles.filtersH2}>Фильтры</h2>
 
-              <div className={styles.filterBlock}>
-                <h3>Бренд</h3>
-                {ALL_BRANDS.map((brand) => (
-                  <label key={brand} className={styles.filterLabel}>
-                    <input
-                      type="checkbox"
-                      checked={brands.includes(brand)}
-                      onChange={() => toggleBrand(brand)}
-                    />
-                    {brand}
-                  </label>
-                ))}
-              </div>
+              {brands.length > 0 && (
+                <div className={styles.filterBlock}>
+                  <h3>Бренд</h3>
+                  {brands.map((brand) => (
+                    <label key={brand.id} className={styles.filterLabel}>
+                      <input
+                        type="checkbox"
+                        checked={selectedBrandIds.includes(brand.id)}
+                        onChange={() => toggleBrandId(brand.id)}
+                      />
+                      {brand.name}
+                    </label>
+                  ))}
+                </div>
+              )}
 
-              <div className={styles.filterBlock}>
-                <h3>Страна</h3>
-                {ALL_COUNTRIES.map((country) => (
-                  <label key={country} className={styles.filterLabel}>
-                    <input
-                      type="checkbox"
-                      checked={countries.includes(country)}
-                      onChange={() => toggleCountry(country)}
-                    />
-                    {country}
-                  </label>
-                ))}
-              </div>
+              {countries.length > 0 && (
+                <div className={styles.filterBlock}>
+                  <h3>Страна</h3>
+                  {countries.map((country) => (
+                    <label key={country.id} className={styles.filterLabel}>
+                      <input
+                        type="checkbox"
+                        checked={selectedCountryIds.includes(country.id)}
+                        onChange={() => toggleCountryId(country.id)}
+                      />
+                      {country.name}
+                    </label>
+                  ))}
+                </div>
+              )}
 
               <div className={styles.filterBlock}>
                 <h3>Цена, ₽</h3>
@@ -116,15 +126,15 @@ export default function CatalogPage() {
                     className={styles.priceInput}
                     type="number"
                     placeholder="от"
-                    value={priceFrom}
-                    onChange={(e) => { setPriceFrom(e.target.value); setPage(1); }}
+                    value={priceMin}
+                    onChange={(e) => { setPriceMin(e.target.value); setPage(1); }}
                   />
                   <input
                     className={styles.priceInput}
                     type="number"
                     placeholder="до"
-                    value={priceTo}
-                    onChange={(e) => { setPriceTo(e.target.value); setPage(1); }}
+                    value={priceMax}
+                    onChange={(e) => { setPriceMax(e.target.value); setPage(1); }}
                   />
                 </div>
               </div>
@@ -134,28 +144,33 @@ export default function CatalogPage() {
           <section>
             <div className={styles.productsHead}>
               <h1>Каталог ароматов</h1>
-              <span className={styles.count}>Найдено: {filtered.length}</span>
+              <span className={styles.count}>Найдено: {total}</span>
             </div>
 
-            <div className={styles.grid}>
-              {paginated.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            {loading && <p>Загрузка...</p>}
+            {error && <p style={{ color: 'red' }}>Ошибка: {error}</p>}
+
+            {!loading && (
+              <div className={styles.grid}>
+                {items.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
 
             {totalPages > 1 && (
               <nav className={styles.pagination}>
                 <button
                   className={styles.pageBtn}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={safePage === 1}
+                  disabled={page === 1}
                 >
                   ←
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
                   <button
                     key={n}
-                    className={`${styles.pageBtn} ${n === safePage ? styles.pageBtnActive : ''}`}
+                    className={`${styles.pageBtn} ${n === page ? styles.pageBtnActive : ''}`}
                     onClick={() => setPage(n)}
                   >
                     {n}
@@ -164,7 +179,7 @@ export default function CatalogPage() {
                 <button
                   className={styles.pageBtn}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={safePage === totalPages}
+                  disabled={page === totalPages}
                 >
                   →
                 </button>
@@ -175,7 +190,7 @@ export default function CatalogPage() {
       </main>
 
       <footer className={`${styles.footer} ${styles.shell}`}>
-        КОМНАТА 26 / ДЗ-3 / МФТИ × Нетология / 2026
+        КОМНАТА 26 / ДЗ-4 / МФТИ × Нетология / 2026
       </footer>
     </>
   );

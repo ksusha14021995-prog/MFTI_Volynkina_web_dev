@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getMinPrice, getDiscountedPrice } from '../../data/products';
+import { getProductImageUrl } from '../../utils/imageUrl';
 import styles from './ProductCard.module.css';
 
 const BottleIcon = () => (
@@ -12,27 +12,35 @@ const BottleIcon = () => (
 
 export default function ProductCard({ product }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const minPrice = getMinPrice(product);
-  const discountedMin = getDiscountedPrice(minPrice, product.discountPct);
-  const hasSale = product.discountPct > 0;
+
+  // Support both backend shape and any legacy shape
+  const brandName = product.brand?.name ?? product.brand ?? '';
+  const minPrice = product.min_price != null ? Number(product.min_price) : null;
+  const discountPct = product.discount_percent ?? 0;
+  const isHit = product.is_hit ?? false;
+
+  const hasSale = discountPct > 0;
+  const discountedMin = minPrice != null
+    ? Math.round(minPrice * (1 - discountPct / 100))
+    : null;
 
   return (
-    <Link to={`/product/${product.id}`} className={styles.card}>
+    <Link to={`/product/${product.slug}`} className={styles.card}>
       <div className={styles.cardImage}>
-        {product.badges.length > 0 && (
+        {(isHit || hasSale) && (
           <div className={styles.badges}>
-            {product.badges.includes('hit') && (
+            {isHit && (
               <span className={`${styles.badge} ${styles.badgeHit}`}>Хит продаж</span>
             )}
-            {product.badges.includes('sale') && (
-              <span className={`${styles.badge} ${styles.badgeSale}`}>Скидка −{product.discountPct}%</span>
+            {hasSale && (
+              <span className={`${styles.badge} ${styles.badgeSale}`}>Скидка −{discountPct}%</span>
             )}
           </div>
         )}
-        {product.image && !imgFailed ? (
+        {getProductImageUrl(product) && !imgFailed ? (
           <img
-            src={product.image}
-            alt={`${product.brand} ${product.name}`}
+            src={getProductImageUrl(product)}
+            alt={`${brandName} ${product.name}`}
             className={styles.productImg}
             onError={() => setImgFailed(true)}
           />
@@ -40,22 +48,23 @@ export default function ProductCard({ product }) {
           <BottleIcon />
         )}
       </div>
-      <div className={styles.cardBrand}>{product.brand}</div>
+      <div className={styles.cardBrand}>{brandName}</div>
       <div className={styles.cardName}>{product.name}</div>
-      <div className={styles.cardPrice}>
-        {hasSale ? (
-          <>
-            <span className="from">от</span>
-            <span className="old">{minPrice.toLocaleString('ru-RU')} ₽</span>
-            {discountedMin.toLocaleString('ru-RU')} ₽
-          </>
-        ) : (
-          <>
-            <span className="from">от </span>
-            {minPrice.toLocaleString('ru-RU')} ₽
-          </>
-        )}
-      </div>
+      {minPrice != null && (
+        <div className={styles.cardPrice}>
+          {hasSale ? (
+            <>
+              <span className={styles.old}>{minPrice.toLocaleString('ru-RU')} ₽</span>
+              {discountedMin.toLocaleString('ru-RU')} ₽
+            </>
+          ) : (
+            <>
+              <span className={styles.from}>от </span>
+              {minPrice.toLocaleString('ru-RU')} ₽
+            </>
+          )}
+        </div>
+      )}
     </Link>
   );
 }

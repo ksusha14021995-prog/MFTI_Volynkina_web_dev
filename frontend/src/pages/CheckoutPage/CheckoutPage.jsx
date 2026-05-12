@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import HeaderSimple from '../../components/Header/HeaderSimple';
-import OrderSummary from '../../components/OrderSummary/OrderSummary';
-import { useCart } from '../../context/CartContext';
-import { pickupPoints } from '../../data/pickupPoints';
-import { products, getDiscountedPrice } from '../../data/products';
+import { fetchPickupPoints, createOrder } from '../../store/actions/ordersActions';
+import { clearCart } from '../../store/actions/cartActions';
 import styles from './CheckoutPage.module.css';
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart } = useCart();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { pickupPoints, pickupLoading, loading: orderLoading, error: orderError } = useSelector(
+    (state) => state.orders
+  );
+  const cartItems = useSelector((state) => state.cart.items);
+
+  useEffect(() => {
+    dispatch(fetchPickupPoints());
+  }, [dispatch]);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -21,9 +28,16 @@ export default function CheckoutPage() {
     name: '',
     phone: '',
     email: '',
-    pickupPointId: pickupPoints[0].id,
+    pickupPointId: null,
   });
   const [errors, setErrors] = useState({});
+
+  // Set default pickup point once loaded
+  useEffect(() => {
+    if (pickupPoints.length > 0 && !form.pickupPointId) {
+      setForm((f) => ({ ...f, pickupPointId: pickupPoints[0].id }));
+    }
+  }, [pickupPoints]);
 
   function setField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -36,10 +50,11 @@ export default function CheckoutPage() {
     if (!form.phone.trim()) errs.phone = 'Введите телефон';
     if (!form.email.trim()) errs.email = 'Введите email';
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Некорректный email';
+    if (!form.pickupPointId) errs.pickupPointId = 'Выберите точку самовывоза';
     return errs;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) {
@@ -47,31 +62,17 @@ export default function CheckoutPage() {
       return;
     }
 
-    const orderId = `26-${Date.now()}`;
-    const pickupPoint = pickupPoints.find((p) => p.id === form.pickupPointId);
+    const order = await dispatch(createOrder({
+      pickup_point_id: form.pickupPointId,
+      contact_name: form.name,
+      contact_phone: form.phone,
+      contact_email: form.email,
+    }));
 
-    const enrichedItems = cartItems.map((item) => {
-      const product = products.find((p) => p.id === item.productId);
-      const variant = product?.variants.find((v) => v.id === item.variantId);
-      const unitPrice = variant ? getDiscountedPrice(variant.price, product.discountPct) : 0;
-      return { ...item, product, variant, unitPrice };
-    });
-
-    const totalPrice = enrichedItems.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-    const totalItems = enrichedItems.reduce((s, i) => s + i.qty, 0);
-
-    const orderData = {
-      orderId,
-      items: enrichedItems,
-      contact: { name: form.name, phone: form.phone, email: form.email },
-      pickupPoint,
-      totalPrice,
-      totalItems,
-    };
-
-    localStorage.setItem(`order_${orderId}`, JSON.stringify(orderData));
-    clearCart();
-    navigate(`/order/${orderId}`, { state: orderData });
+    if (order) {
+      dispatch(clearCart());
+      navigate(`/order/${order.order_number}`);
+    }
   }
 
   return (
@@ -80,6 +81,10 @@ export default function CheckoutPage() {
 
       <main className={`${styles.main} ${styles.shell}`}>
         <h1 className={styles.pageTitle}>Оформление заказа</h1>
+
+        {orderError && (
+          <p style={{ color: 'red' }}>Ошибка: {orderError}</p>
+        )}
 
         <div className={styles.layout}>
           <section>
@@ -129,8 +134,9 @@ export default function CheckoutPage() {
                   <span className={styles.step}>2</span>
                   Точка самовывоза
                 </h2>
+                {pickupLoading && <p>Загрузка точек самовывоза...</p>}
                 <div className={styles.pickupList}>
-                  {pickupPoints.map((pt) => (
+                  {pickupPoints.filter((pt) => pt.is_active !== false).map((pt) => (
                     <label
                       key={pt.id}
                       className={`${styles.pickupOption} ${form.pickupPointId === pt.id ? styles.pickupSelected : ''}`}
@@ -142,13 +148,16 @@ export default function CheckoutPage() {
                         onChange={() => setField('pickupPointId', pt.id)}
                       />
                       <div className={styles.pickupInfo}>
-                        <div className={styles.pickupName}>{pt.name}</div>
-                        <div className={styles.pickupAddr}>{pt.address}</div>
-                        <div className={styles.pickupHours}>{pt.hours}</div>
+                        <div className={styles.pickupName}>{pt.address}</div>
+                        <div className={styles.pickupAddr}>{pt.city}</div>
+                        <div className={styles.pickupHours}>{pt.working_hours}</div>
                       </div>
                     </label>
                   ))}
                 </div>
+                {errors.pickupPointId && (
+                  <span className={styles.errorMsg}>{errors.pickupPointId}</span>
+                )}
               </div>
 
               <div className={styles.section}>
@@ -162,18 +171,34 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Hidden submit — triggered from OrderSummary */}
-              <button type="submit" id="checkout-submit" style={{ display: 'none' }} />
+              <button
+                type="submit"
+                disabled={orderLoading}
+                style={{ marginTop: 16, padding: '12px 32px', cursor: 'pointer' }}
+              >
+                {orderLoading ? 'Оформляем...' : 'Оформить заказ'}
+              </button>
             </form>
           </section>
 
-          <OrderSummary
-            cartItems={cartItems}
-            onCheckout={() => document.getElementById('checkout-submit')?.click()}
-            btnLabel="Оформить заказ"
-            showItems
-            terms
-          />
+          <aside>
+            <h2>Ваш заказ</h2>
+            {cartItems.map((item) => (
+              <div key={item.id} style={{ marginBottom: 8 }}>
+                <div>{item.brand_name} {item.product_name}</div>
+                {item.volume_ml && <div>{item.volume_ml} мл · {item.quantity} шт.</div>}
+                {item.unit_price != null && (
+                  <div>{(item.unit_price * item.quantity).toLocaleString('ru-RU')} ₽</div>
+                )}
+              </div>
+            ))}
+            <div style={{ marginTop: 16, fontWeight: 'bold' }}>
+              Итого: {cartItems.reduce((s, i) => s + (i.unit_price ?? 0) * i.quantity, 0).toLocaleString('ru-RU')} ₽
+            </div>
+            <p style={{ fontSize: 12, color: '#666', marginTop: 8 }}>
+              Нажимая «Оформить заказ», вы принимаете условия оферты и согласие на обработку персональных данных.
+            </p>
+          </aside>
         </div>
       </main>
     </>

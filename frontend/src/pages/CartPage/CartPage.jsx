@@ -1,9 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import Header from '../../components/Header/Header';
 import QtySelector from '../../components/QtySelector/QtySelector';
-import OrderSummary from '../../components/OrderSummary/OrderSummary';
-import { useCart } from '../../context/CartContext';
-import { products, getDiscountedPrice } from '../../data/products';
+import { fetchCart, updateCartItem, removeCartItem, clearCart } from '../../store/actions/cartActions';
 import styles from './CartPage.module.css';
 
 const BottleIcon = () => (
@@ -13,20 +13,41 @@ const BottleIcon = () => (
   </svg>
 );
 
+function CartItemImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+  if (src && !failed) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={styles.itemImg}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return <BottleIcon />;
+}
+
 export default function CartPage() {
-  const { cartItems, removeItem, updateQty, clearCart, totalItems } = useCart();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { items, loading } = useSelector((state) => state.cart);
 
-  const enriched = cartItems.map((item) => {
-    const product = products.find((p) => p.id === item.productId);
-    const variant = product?.variants.find((v) => v.id === item.variantId);
-    const unitPrice = variant ? getDiscountedPrice(variant.price, product.discountPct) : 0;
-    return { ...item, product, variant, unitPrice };
-  });
+  useEffect(() => {
+    dispatch(fetchCart());
+  }, [dispatch]);
 
-  const totalPrice = enriched.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const totalItems = items.reduce((s, i) => s + i.quantity, 0);
+  const totalPrice = items.reduce((s, i) => s + (i.unit_price ?? 0) * i.quantity, 0);
+  const isEmpty = items.length === 0;
 
-  const isEmpty = cartItems.length === 0;
+  function handleUpdateQty(item, newQty) {
+    if (newQty <= 0) {
+      dispatch(removeCartItem(item.id));
+    } else {
+      dispatch(updateCartItem(item.id, newQty));
+    }
+  }
 
   return (
     <>
@@ -39,46 +60,65 @@ export default function CartPage() {
           <p className={styles.pageSub}>{totalItems} позиц. на сумму {totalPrice.toLocaleString('ru-RU')} ₽</p>
         )}
 
-        {isEmpty ? (
+        {loading && <p>Загрузка корзины...</p>}
+
+        {!loading && isEmpty && (
           <div className={styles.emptyState}>
             <p>Корзина пуста</p>
             <Link to="/">Перейти в каталог</Link>
           </div>
-        ) : (
+        )}
+
+        {!loading && !isEmpty && (
           <div className={styles.cartLayout}>
             <section>
               <div className={styles.actionsTop}>
-                <button className={styles.clearLink} onClick={clearCart} type="button">
+                <button
+                  className={styles.clearLink}
+                  onClick={() => dispatch(clearCart())}
+                  type="button"
+                >
                   Очистить корзину
                 </button>
               </div>
 
-              {enriched.map((item) => (
-                <article key={`${item.productId}-${item.variantId}`} className={styles.cartItem}>
+              {items.map((item) => (
+                <article key={item.id} className={styles.cartItem}>
                   <div className={styles.itemImage}>
-                    <BottleIcon />
+                    <CartItemImage
+                      src={item.image_url}
+                      alt={`${item.brand_name || ''} ${item.product_name || ''}`}
+                    />
                   </div>
                   <div className={styles.itemInfo}>
-                    <div className={styles.itemBrand}>{item.product?.brand}</div>
+                    <div className={styles.itemBrand}>{item.brand_name}</div>
                     <div className={styles.itemName}>
-                      <Link to={`/product/${item.productId}`}>{item.product?.name}</Link>
+                      {item.product_name}
                     </div>
-                    <div className={styles.itemVolume}>Объём: {item.variant?.volume} мл</div>
-                    <div className={styles.itemUnitPrice}>{item.unitPrice.toLocaleString('ru-RU')} ₽ за шт.</div>
+                    {item.volume_ml && (
+                      <div className={styles.itemVolume}>Объём: {item.volume_ml} мл</div>
+                    )}
+                    {item.unit_price != null && (
+                      <div className={styles.itemUnitPrice}>{item.unit_price.toLocaleString('ru-RU')} ₽ за шт.</div>
+                    )}
                   </div>
                   <div className={styles.qtyArea}>
                     <QtySelector
-                      qty={item.qty}
+                      qty={item.quantity}
                       small
-                      onIncrease={() => updateQty(item.productId, item.variantId, item.qty + 1)}
-                      onDecrease={() => updateQty(item.productId, item.variantId, item.qty - 1)}
+                      onIncrease={() => handleUpdateQty(item, item.quantity + 1)}
+                      onDecrease={() => handleUpdateQty(item, item.quantity - 1)}
                     />
                   </div>
                   <div className={styles.itemTotalBlock}>
-                    <div className={styles.itemTotal}>{(item.unitPrice * item.qty).toLocaleString('ru-RU')} ₽</div>
+                    {item.unit_price != null && (
+                      <div className={styles.itemTotal}>
+                        {(item.unit_price * item.quantity).toLocaleString('ru-RU')} ₽
+                      </div>
+                    )}
                     <button
                       className={styles.itemRemove}
-                      onClick={() => removeItem(item.productId, item.variantId)}
+                      onClick={() => dispatch(removeCartItem(item.id))}
                       title="Удалить"
                       type="button"
                     >
@@ -89,12 +129,19 @@ export default function CartPage() {
               ))}
             </section>
 
-            <OrderSummary
-              cartItems={cartItems}
-              onCheckout={() => navigate('/checkout')}
-              btnLabel="Оформить заказ"
-              btnDisabled={isEmpty}
-            />
+            <aside className={styles.summary ?? ''}>
+              <div>
+                <div>Товары, {totalItems} шт.: {totalPrice.toLocaleString('ru-RU')} ₽</div>
+                <div>Самовывоз: бесплатно</div>
+                <div><strong>Итого: {totalPrice.toLocaleString('ru-RU')} ₽</strong></div>
+              </div>
+              <button
+                onClick={() => navigate('/checkout')}
+                style={{ marginTop: 16, padding: '12px 24px', cursor: 'pointer' }}
+              >
+                Оформить заказ
+              </button>
+            </aside>
           </div>
         )}
       </main>

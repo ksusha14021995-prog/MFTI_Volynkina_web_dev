@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2a2a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="bottle" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4af37;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:0.4"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="500" fill="url(#bg)"/>
+
+  <!-- Subtle corner decoration -->
+  <rect x="16" y="16" width="368" height="468" fill="none" stroke="#d4af37" stroke-width="0.5" stroke-opacity="0.3"/>
+
+  <!-- Bottle body -->
+  <rect x="155" y="190" width="90" height="210" rx="6" fill="url(#bottle)" filter="url(#glow)"/>
+  <!-- Bottle neck -->
+  <rect x="172" y="150" width="56" height="46" rx="4" fill="#d4af37" fill-opacity="0.7"/>
+  <!-- Bottle cap -->
+  <rect x="166" y="128" width="68" height="28" rx="4" fill="#d4af37" fill-opacity="0.9"/>
+  <!-- Bottle label -->
+  <rect x="163" y="240" width="74" height="110" rx="3" fill="#1a1a1a" fill-opacity="0.6"/>
+
+  <!-- Label lines (decorative) -->
+  <line x1="172" y1="262" x2="228" y2="262" stroke="#d4af37" stroke-width="0.8" stroke-opacity="0.8"/>
+  <line x1="172" y1="274" x2="228" y2="274" stroke="#d4af37" stroke-width="0.5" stroke-opacity="0.5"/>
+  <line x1="172" y1="316" x2="228" y2="316" stroke="#d4af37" stroke-width="0.8" stroke-opacity="0.8"/>
+
+  <!-- Reflection highlight -->
+  <rect x="165" y="195" width="10" height="190" rx="3" fill="white" fill-opacity="0.1"/>
+
+  <!-- Product name at bottom -->
+  <text x="200" y="440" font-family="Georgia, serif" font-size="13" fill="#ffe97a" text-anchor="middle" fill-opacity="0.9">Black Opium</text>
+</svg>

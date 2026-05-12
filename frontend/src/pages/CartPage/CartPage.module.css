@@ -79,6 +79,13 @@
 
 .itemImage svg { width: 50%; height: 50%; opacity: 0.4; }
 
+.itemImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .itemInfo { min-width: 0; }
 
 .itemBrand {

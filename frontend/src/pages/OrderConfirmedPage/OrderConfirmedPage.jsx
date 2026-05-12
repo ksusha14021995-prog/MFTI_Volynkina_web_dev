@@ -1,5 +1,8 @@
-import { useParams, useLocation, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import HeaderSimple from '../../components/Header/HeaderSimple';
+import { fetchOrder } from '../../store/actions/ordersActions';
 import styles from './OrderConfirmedPage.module.css';
 
 const BottleIcon = () => (
@@ -10,26 +13,31 @@ const BottleIcon = () => (
 );
 
 export default function OrderConfirmedPage() {
-  const { id } = useParams();
-  const location = useLocation();
+  const { orderNumber } = useParams();
+  const dispatch = useDispatch();
+  const { currentOrder, loading, error } = useSelector((state) => state.orders);
 
-  let orderData = location.state;
-  if (!orderData) {
-    try {
-      const raw = localStorage.getItem(`order_${id}`);
-      orderData = raw ? JSON.parse(raw) : null;
-    } catch {
-      orderData = null;
-    }
+  useEffect(() => {
+    dispatch(fetchOrder(orderNumber));
+  }, [dispatch, orderNumber]);
+
+  if (loading) {
+    return (
+      <>
+        <HeaderSimple backTo="/" backLabel="← В каталог" />
+        <main className={`${styles.main} ${styles.shell}`}><p>Загрузка заказа...</p></main>
+      </>
+    );
   }
 
-  if (!orderData) {
+  if (error || !currentOrder) {
     return (
       <>
         <HeaderSimple backTo="/" backLabel="← В каталог" />
         <main className={`${styles.main} ${styles.shell}`}>
           <div className={styles.confirmed}>
             <h1 className={styles.h1}>Заказ не найден</h1>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <div className={styles.actions}>
               <Link to="/" className={`${styles.btn} ${styles.btnSecondary}`}>В каталог</Link>
             </div>
@@ -39,7 +47,9 @@ export default function OrderConfirmedPage() {
     );
   }
 
-  const { orderId, items, contact, pickupPoint, totalPrice, totalItems } = orderData;
+  const order = currentOrder;
+  const totalAmount = order.total_amount;
+  const totalItems = order.items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
 
   return (
     <>
@@ -53,48 +63,50 @@ export default function OrderConfirmedPage() {
           </div>
 
           <h1 className={styles.h1}>Заказ оформлен</h1>
-          <p className={styles.orderNumber}>Номер заказа <strong>№ {orderId}</strong></p>
-          {contact?.email && (
-            <p className={styles.confirmMsg}>Мы отправим подтверждение на {contact.email}</p>
+          <p className={styles.orderNumber}>Номер заказа <strong>№ {order.order_number}</strong></p>
+          {order.contact_email && (
+            <p className={styles.confirmMsg}>Мы отправим подтверждение на {order.contact_email}</p>
           )}
 
           <div className={styles.cards}>
             <div className={styles.card}>
               <h2>Контакты</h2>
               <div className={styles.cardRow}>
-                <strong>{contact?.name}</strong>
-                {contact?.phone}<br />
-                {contact?.email}
+                <strong>{order.contact_name}</strong>
+                <br />{order.contact_phone}
+                <br />{order.contact_email}
               </div>
             </div>
             <div className={styles.card}>
               <h2>Точка самовывоза</h2>
               <div className={styles.cardRow}>
-                <strong>{pickupPoint?.name}</strong>
-                {pickupPoint?.address}<br />
-                {pickupPoint?.hours}
+                <strong>{order.pickup_point?.address}</strong>
+                <br />{order.pickup_point?.city}
+                <br />{order.pickup_point?.working_hours}
               </div>
             </div>
           </div>
 
           <div className={styles.itemsBlock}>
             <h2 className={styles.itemsTitle}>Состав заказа</h2>
-            {items.map((item, i) => (
-              <div key={i} className={styles.item}>
+            {order.items?.map((item, i) => (
+              <div key={item.id ?? i} className={styles.item}>
                 <div className={styles.itemImg}><BottleIcon /></div>
                 <div>
-                  <div className={styles.itemBrand}>{item.product?.brand}</div>
-                  <div className={styles.itemName}>{item.product?.name}</div>
-                  <div className={styles.itemVol}>{item.variant?.volume} мл · {item.qty} шт.</div>
+                  <div className={styles.itemBrand}>{item.brand_name}</div>
+                  <div className={styles.itemName}>{item.product_name}</div>
+                  <div className={styles.itemVol}>{item.volume_ml} мл · {item.quantity} шт.</div>
                 </div>
-                <div className={styles.itemPrice}>{(item.unitPrice * item.qty).toLocaleString('ru-RU')} ₽</div>
+                <div className={styles.itemPrice}>
+                  {Number(item.subtotal ?? item.unit_price * item.quantity).toLocaleString('ru-RU')} ₽
+                </div>
               </div>
             ))}
 
             <div className={styles.totals}>
               <div className={styles.totalsRow}>
                 <span>Товары, {totalItems} шт.</span>
-                <span>{totalPrice.toLocaleString('ru-RU')} ₽</span>
+                <span>{Number(totalAmount).toLocaleString('ru-RU')} ₽</span>
               </div>
               <div className={`${styles.totalsRow} ${styles.totalsRowMuted}`}>
                 <span>Самовывоз</span>
@@ -102,7 +114,7 @@ export default function OrderConfirmedPage() {
               </div>
               <div className={`${styles.totalsRow} ${styles.totalsRowTotal}`}>
                 <span>К оплате при получении</span>
-                <span>{totalPrice.toLocaleString('ru-RU')} ₽</span>
+                <span>{Number(totalAmount).toLocaleString('ru-RU')} ₽</span>
               </div>
             </div>
           </div>
