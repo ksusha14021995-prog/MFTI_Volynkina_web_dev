@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMinPrice, getDiscountedPrice } from '../../data/products';
 import styles from './ProductCard.module.css';
@@ -10,6 +11,7 @@ const BottleIcon = () => (
 );
 
 export default function ProductCard({ product }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const minPrice = getMinPrice(product);
   const discountedMin = getDiscountedPrice(minPrice, product.discountPct);
   const hasSale = product.discountPct > 0;
@@ -27,7 +29,16 @@ export default function ProductCard({ product }) {
             )}
           </div>
         )}
-        <BottleIcon />
+        {product.image && !imgFailed ? (
+          <img
+            src={product.image}
+            alt={`${product.brand} ${product.name}`}
+            className={styles.productImg}
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <BottleIcon />
+        )}
       </div>
       <div className={styles.cardBrand}>{product.brand}</div>
       <div className={styles.cardName}>{product.name}</div>

@@ -25,6 +25,7 @@ export default function ProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const [imgFailed, setImgFailed] = useState(false);
 
   const product = getProductById(id);
 
@@ -86,7 +87,16 @@ export default function ProductPage() {
                 )}
               </div>
             )}
-            <BottleIcon />
+            {product.image && !imgFailed ? (
+              <img
+                src={product.image}
+                alt={`${product.brand} ${product.name}`}
+                className={styles.productImg}
+                onError={() => setImgFailed(true)}
+              />
+            ) : (
+              <BottleIcon />
+            )}
           </div>
 
           <div>
